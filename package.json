@@ -1,0 +1,20 @@
+{
+  "name": "shureprint-quote-builder",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "functions": "node functions/index.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.19"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.0"
+  }
+}

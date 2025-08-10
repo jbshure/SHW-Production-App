@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "WebFetch(domain:www.shureprint.com)",
+      "Bash(findstr:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

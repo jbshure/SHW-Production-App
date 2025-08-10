@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShurePrint Quote Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Lato:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary-color: #000000; --secondary-color: #ffffff; --accent-color: #e3fc02; --text-primary: #000000; --text-secondary: #666; --text-light: #999; --border-color: #e0e0e0; --success-color: #28a745; --warning-color: #ffc107; --error-color: #dc3545; --background-light: #fff; --background-gray: #f8f9fa; --shadow-sm: 0 2px 4px rgba(0,0,0,.05); --shadow-md: 0 4px 12px rgba(0,0,0,.1); --shadow-lg: 0 8px 24px rgba(0,0,0,.15);
+    }
+    body { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--secondary-color); min-height: 100vh; color: var(--text-primary); line-height: 1.6; }
+    .quote-builder { max-width: 1400px; margin: 20px auto; background: var(--background-light); border-radius: 16px; box-shadow: var(--shadow-lg); overflow: hidden; }
+    .header { background: var(--primary-color); color: #fff; padding: 40px; position: relative; overflow: hidden; }
+    .header::before { content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: var(--accent-color); border-radius: 50%; opacity: .1; transform: translate(50px,-50px); }
+    .header-content { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .brand-section { display: flex; align-items: center; gap: 20px; }
+    .logo-container { height: 60px; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0 10px; }
+    .brand-text h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; color: #fff; }
+    .brand-text p { font-size: 1rem; opacity: .8; font-weight: 400; color: #fff; }
+    .quote-number { background: rgba(255,255,255,.1); padding: 12px 20px; border-radius: 25px; font-weight: 600; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.1); }
+    .status-indicator { position: absolute; top: 20px; left: 20px; background: var(--success-color); color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: .9rem; box-shadow: var(--shadow-sm); }
+    .progress-bar { background: rgba(255,255,255,.2); border-radius: 10px; overflow: hidden; margin-top: 20px; height: 6px; }
+    .progress-fill { background: var(--accent-color); height: 100%; transition: width .3s ease; width: 0%; border-radius: 10px; }
+    .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 0; min-height: 800px; }
+    .quote-form-section { padding: 40px; overflow-y: auto; max-height: 800px; }
+    .quote-preview { background: var(--background-gray); border-left: 1px solid var(--border-color); padding: 40px 30px; overflow-y: auto; max-height: 800px; }
+    .form-section { background: var(--background-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; margin-bottom: 30px; transition: all .3s ease; }
+    .form-section:hover { box-shadow: var(--shadow-md); border-color: var(--accent-color); }
+    .form-section h3 { color: var(--text-primary); margin-bottom: 24px; font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+    .section-icon { width: 32px; height: 32px; background: var(--accent-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #fff; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    label { font-family: 'Lato', sans-serif; font-weight: 500; color: var(--text-primary); margin-bottom: 8px; font-size: .9rem; }
+    input, textarea, select { padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; transition: all .3s ease; font-family: inherit; background: var(--background-light); color: var(--text-primary); }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(227,252,2,.1); }
+    .btn { padding: 14px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: .95rem; transition: all .3s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-family: inherit; }
+    .btn-primary { background: var(--primary-color); color: #fff; }
+    .btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-accent { background: var(--accent-color); color: #000; font-weight: 600; }
+    .btn-accent:hover { background: #d4ed02; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-outline:hover { background: var(--background-gray); border-color: var(--accent-color); }
+    .quick-templates { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; margin: 24px 0; }
+    .template-btn { background: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px 16px; text-align: center; cursor: pointer; transition: all .3s ease; font-size: .9rem; color: var(--text-primary); }
+    .template-btn:hover { border-color: var(--accent-color); background: var(--background-gray); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .items-table { width: 100%; border-collapse: collapse; margin: 24px 0; background: var(--background-light); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+    .items-table th { background: var(--primary-color); color: #fff; padding: 16px 12px; text-align: left; font-weight: 500; font-size: .9rem; }
+    .items-table td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .items-table tbody tr:hover { background: var(--background-gray); }
+    .items-table input, .items-table select { width: 100%; border: 1px solid var(--border-color); padding: 8px 10px; font-size: 13px; border-radius: 6px; background: var(--background-light); }
+    .preview-section { background: var(--background-light); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color); transition: all .3s ease; }
+    .preview-section:hover { box-shadow: var(--shadow-sm); }
+    .preview-header { color: var(--text-primary); font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent-color); display: flex; align-items: center; gap: 8px; }
+    .quote-summary { background: var(--primary-color); color: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .summary-item { display: flex; justify-content: space-between; margin: 12px 0; padding: 8px 0; font-size: .95rem; }
+    .summary-total { border-top: 1px solid rgba(255,255,255,.2); margin-top: 16px; padding-top: 16px; font-size: 1.25rem; font-weight: 600; }
+    .actions-bar { display: flex; gap: 16px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+    .notification { position: fixed; top: 24px; right: 24px; background: var(--success-color); color: #fff; padding: 16px 24px; border-radius: 12px; font-weight: 500; z-index: 1000; transform: translateX(400px); transition: transform .3s ease; box-shadow: var(--shadow-lg); max-width: 350px; }
+    .notification.show { transform: translateX(0); }
+    .notification.error { background: var(--error-color); }
+    .notification.warning { background: var(--warning-color); color: var(--text-primary); }
+    .saved-indicator { color: var(--success-color); font-size: .85rem; margin-left: 12px; opacity: 0; transition: opacity .3s ease; font-weight: 500; }
+    .saved-indicator.show { opacity: 1; }
+    .floating-save-btn { position: fixed; bottom: 30px; right: 30px; background: var(--accent-color); color: #fff; border: none; border-radius: 50px; padding: 16px 24px; font-weight: 500; box-shadow: var(--shadow-lg); cursor: pointer; z-index: 100; transition: all .3s ease; font-family: inherit; }
+    .floating-save-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(255,107,53,.4); }
+    .ai-suggestions { background: linear-gradient(135deg,#fff5f2 0%,#fff 100%); border: 1px solid #ffd4c4; border-radius: 12px; padding: 20px; margin: 24px 0; }
+    .ai-suggestions h4 { color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .suggestion-item { background: var(--background-light); border-radius: 8px; padding: 12px 16px; margin: 8px 0; border-left: 3px solid var(--accent-color); cursor: pointer; transition: all .2s; font-size: .9rem; color: var(--text-secondary); }
+    .suggestion-item:hover { transform: translateX(4px); box-shadow: var(--shadow-sm); background: #fff5f2; }
+    .brand-badge { background: var(--accent-color); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: .8rem; font-weight: 500; display: inline-block; margin-left: 8px; }
+    @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .quote-preview { border-left: none; border-top: 1px solid var(--border-color); } .header-content { flex-direction: column; text-align: center; } .form-row { grid-template-columns: 1fr; gap: 16px; } }
+    @media (max-width: 768px) { .quote-builder { margin: 10px; border-radius: 12px; } .header { padding: 30px 20px; } .quote-form-section, .quote-preview { padding: 20px; } .brand-text h1 { font-size: 2rem; } .actions-bar { flex-direction: column; } .btn { justify-content: center; width: 100%; } }
+    ::-webkit-scrollbar{ width:6px } ::-webkit-scrollbar-track{ background:var(--background-gray) } ::-webkit-scrollbar-thumb{ background:var(--border-color); border-radius:3px } ::-webkit-scrollbar-thumb:hover{ background:var(--text-light) }
+  </style>
+</head>
+<body>
+  <div class="quote-builder">
+    <div class="header">
+      <div class="status-indicator" id="statusIndicator">💾 Draft</div>
+      <div class="header-content">
+        <div class="brand-section">
+          <div class="logo-container">
+            <img src="Shureprint V3 - small.png" alt="SHUREPRINT" style="height: 40px; width: auto; filter: invert(1);" />
+          </div>
+          <div class="brand-text">
+            <h1 style="font-family: 'Montserrat', sans-serif; font-weight: 400; letter-spacing: 0.05em;">SHUREPRINT</h1>
+            <p style="font-family: 'Lato', sans-serif;">Professional Quote Builder</p>
+          </div>
+        </div>
+        <div class="quote-number" id="quoteNumber">QT-2025001</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="main-grid">
+      <div class="quote-form-section">
+        <form id="quoteForm">
+          <!-- Production Cards (single) -->
+          <div class="form-section">
+            <h3><div class="section-icon">📋</div> Production Cards <span class="brand-badge">Trello Integration</span></h3>
+            <div style="margin-bottom: 20px;">
+              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <select id="trelloListSelect" style="flex: 1;">
+                  <option value="">Select a Trello list...</option>
+                </select>
+                <button type="button" onclick="testTrelloLoad()" class="btn btn-primary">📋 Load Lists</button>
+                <button type="button" onclick="testTrelloRefresh()" class="btn btn-primary">🔄 Load Cards</button>
+              </div>
+              <div id="trelloCardsList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; display: none;"></div>
+            </div>
+            <div id="selectedTrelloCards"></div>
+            <div style="font-size: .9rem; color: var(--text-secondary); padding: 12px; background: var(--background-gray); border-radius: 8px;">💡 <strong>Tip:</strong> Select cards from Pre-Order Sales or Quoting to auto-populate quote items with existing project details.</div>
+          </div>
+
+          <!-- Client Information (single) -->
+          <div class="form-section">
+            <h3><div class="section-icon">👤</div> Client Information <span class="saved-indicator" id="clientSaved">✓ Saved</span></h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="clientCompany">Company Name *</label>
+                <input type="text" id="clientCompany" name="clientCompany" required placeholder="Enter company name" onchange="updateProgress()" />
+              </div>
+              <div class="form-group">
+                <label for="contactName">Contact Name *</label>
+                <input type="text" id="contactName" name="contactName" required placeholder="Enter contact name" onchange="updateProgress()" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="contactEmail">Email Address *</label>
+                <input type="email" id="contactEmail" name="contactEmail" required placeholder="contact@company.com" onchange="updateProgress()" />
+              </div>
+              <div class="form-group">
+                <label for="contactPhone">Phone Number</label>
+                <input type="tel" id="contactPhone" name="contactPhone" placeholder="(555) 123-4567" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="projectName">Project Name *</label>
+                <input type="text" id="projectName" name="projectName" required placeholder="Describe the printing project" onchange="updateProgress()" />
+              </div>
+              <div class="form-group">
+                <label for="quoteValidUntil">Quote Valid Until</label>
+                <input type="date" id="quoteValidUntil" name="quoteValidUntil" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="salesRepName">Sales Rep Name</label>
+                <input type="text" id="salesRepName" placeholder="Your name" onchange="updateProgress()" />
+              </div>
+              <div class="form-group">
+                <label for="salesRepEmail">Sales Rep Email</label>
+                <input type="email" id="salesRepEmail" placeholder="you@shurehw.com" onchange="updateProgress()" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Catalog -->
+          <div class="form-section">
+            <h3><div class="section-icon">📦</div> Product Catalog</h3>
+            <div style="margin-bottom: 20px;">
+              <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <select id="productCategorySelect" style="flex: 1;" onchange="filterByCategory()">
+                  <option value="">Categories loaded from Airtable</option>
+                </select>
+                <button type="button" onclick="testAirtableLoad()" class="btn btn-primary">📦 Load Catalog</button>
+                <button type="button" onclick="testAirtableConnection()" class="btn btn-outline">🔍 Debug</button>
+                <button type="button" onclick="toggleProductModal()" class="btn btn-primary">Browse Products</button>
+              </div>
+              <div style="font-size: .9rem; color: var(--text-secondary); padding: 12px; background: var(--background-gray); border-radius: 8px;">📦 <strong>Product Catalog:</strong> Products and categories will load from Airtable when API is configured.</div>
+            </div>
+          </div>
+
+          <!-- Quote Items -->
+          <div class="form-section">
+            <h3><div class="section-icon">📋</div> Quote Items <span class="saved-indicator" id="itemsSaved">✓ Saved</span></h3>
+            <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button type="button" onclick="addRow()" class="btn btn-primary">+ Add Item</button>
+              <button type="button" onclick="addQuantityBreaks()" class="btn btn-outline">📊 Quantity Breaks</button>
+            </div>
+            <table class="items-table" id="itemsTable">
+              <thead>
+                <tr>
+                  <th>Product/Service</th>
+                  <th>Specifications</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Setup Fee</th>
+                  <th>Total</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="itemsTableBody">
+                <tr>
+                  <td><input type="text" name="product[]" placeholder="Enter product name" onchange="updateProgress()" /></td>
+                  <td><input type="text" name="specs[]" placeholder="Size, material, colors, etc." /></td>
+                  <td><input type="number" name="quantity[]" value="1000" min="1" onchange="calculateRow(this)" /></td>
+                  <td><input type="number" name="unitPrice[]" step="0.001" placeholder="0.000" onchange="calculateRow(this)" /></td>
+                  <td><input type="number" name="setupFee[]" step="0.01" placeholder="0.00" onchange="calculateRow(this)" /></td>
+                  <td><input type="number" name="total[]" step="0.01" placeholder="0.00" readonly /></td>
+                  <td><button type="button" onclick="removeRow(this)" class="btn" style="background: var(--error-color); color: #fff; padding: 8px 12px; font-size: .8rem;">×</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pricing & Terms -->
+          <div class="form-section">
+            <h3><div class="section-icon">💰</div> Pricing & Terms</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="taxRate">Tax Rate (%)</label>
+                <input type="number" id="taxRate" name="taxRate" value="9.5" step="0.01" onchange="calculateTotals()" />
+                <small style="color: var(--text-light); font-size: .8rem;">LA County rate</small>
+              </div>
+              <div class="form-group">
+                <label for="depositPercent">Required Deposit (%)</label>
+                <input type="number" id="depositPercent" name="depositPercent" value="50" step="0.01" onchange="calculateTotals()" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="deliveryTime">Estimated Delivery</label>
+                <select id="deliveryTime" name="deliveryTime">
+                  <option value="3-5 business days">3-5 business days</option>
+                  <option value="1-2 weeks" selected>1-2 weeks</option>
+                  <option value="2-3 weeks">2-3 weeks</option>
+                  <option value="3-4 weeks">3-4 weeks</option>
+                  <option value="Custom timeline">Custom timeline</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="paymentTerms">Payment Terms</label>
+                <select id="paymentTerms" name="paymentTerms">
+                  <option value="50% deposit, balance on completion" selected>50% deposit, balance on completion</option>
+                  <option value="Net 15">Net 15</option>
+                  <option value="Net 30">Net 30</option>
+                  <option value="Payment in full upfront">Payment in full upfront</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label for="specialInstructions">Special Instructions/Notes</label>
+              <textarea id="specialInstructions" name="specialInstructions" placeholder="Any special requirements, deadlines, branding specifications, or notes for this project..." rows="3"></textarea>
+            </div>
+          </div>
+
+          <div class="actions-bar">
+            <button type="button" onclick="generatePDF()" class="btn btn-accent">📄 Generate PDF</button>
+            <button type="button" onclick="sendToCustomer()" class="btn btn-accent">📧 Send to Customer</button>
+            <button type="button" onclick="previewQuote()" class="btn btn-primary">👁️ Preview</button>
+            <button type="button" onclick="duplicateQuote()" class="btn btn-outline">📋 Duplicate</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="quote-preview">
+        <div class="preview-section">
+          <div class="preview-header">📊 Quote Summary</div>
+          <div class="quote-summary">
+            <div class="summary-item"><span>Subtotal:</span><span id="previewSubtotal">$0.00</span></div>
+            <div class="summary-item"><span>Tax (<span id="previewTaxRate">9.5</span>%):</span><span id="previewTax">$0.00</span></div>
+            <div class="summary-item summary-total"><span>Total:</span><span id="previewTotal">$0.00</span></div>
+            <div class="summary-item" style="border-top: 1px solid rgba(255,255,255,.2); margin-top: 12px; padding-top: 12px;"><span>Required Deposit:</span><span id="previewDeposit">$0.00</span></div>
+          </div>
+        </div>
+
+        <div class="preview-section">
+          <div class="preview-header">📋 Items Breakdown</div>
+          <div id="itemsPreview"><p style="color: var(--text-light); font-style: italic; text-align: center; padding: 24px;">Add items to see preview</p></div>
+        </div>
+
+        <div class="preview-section">
+          <div class="preview-header">📅 Project Timeline</div>
+          <div id="timelinePreview">
+            <div style="color: var(--text-secondary); margin: 12px 0; display: flex; justify-content: space-between;"><strong>Quote Valid Until:</strong><span id="validUntilPreview">Not set</span></div>
+            <div style="color: var(--text-secondary); margin: 12px 0; display: flex; justify-content: space-between;"><strong>Estimated Delivery:</strong><span id="deliveryPreview">1-2 weeks</span></div>
+            <div style="color: var(--text-secondary); margin: 12px 0; display: flex; justify-content: space-between;"><strong>Payment Terms:</strong><span id="paymentPreview">50% deposit, balance on completion</span></div>
+          </div>
+        </div>
+
+        <div class="preview-section">
+          <div class="preview-header">🎯 Quick Actions</div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button onclick="convertToInvoice()" class="btn btn-accent" style="width: 100%;">📄 Convert to Invoice</button>
+            <button onclick="exportToCSV()" class="btn btn-outline" style="width: 100%;">📊 Export to CSV</button>
+            <button onclick="shareQuote()" class="btn btn-outline" style="width: 100%;">🔗 Share Quote Link</button>
+          </div>
+        </div>
+
+        <div class="preview-section" style="background: linear-gradient(135deg,#fff5f2 0%,#fff 100%); border: 1px solid #ffd4c4;">
+          <div class="preview-header" style="border-bottom-color: var(--accent-color);">🏢 shureprint</div>
+          <div style="font-size: .9rem; color: var(--text-secondary); line-height: 1.6;">
+            <p>LA-based print and packaging company devoted to branding, hospitality, and design.</p>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffd4c4; font-size: .8rem;"><strong>Specializing in:</strong> Custom packaging, paper products, hospitality branding</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="floating-save-btn" onclick="autoSave()" id="floatingSaveBtn">💾 Auto-Save</button>
+  <div id="notification" class="notification"></div>
+
+  <!-- Product Modal -->
+  <div id="productModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 1000; padding: 20px; box-sizing: border-box;">
+    <div role="dialog" aria-modal="true" aria-labelledby="productCatalogTitle" style="background: #fff; max-width: 800px; margin: 50px auto; border-radius: 16px; max-height: 80vh; overflow: hidden; box-shadow: var(--shadow-lg);">
+      <div style="padding: 30px 30px 20px 30px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="productCatalogTitle" style="margin: 0; color: var(--text-primary);">Product Catalog</h2>
+        <button onclick="toggleProductModal()" aria-label="Close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary);">×</button>
+      </div>
+      <div style="padding: 20px 30px;">
+        <input type="text" id="productSearch" placeholder="Search products..." style="width: 100%; margin-bottom: 20px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px;" onkeyup="filterProducts()" />
+        <div id="productCatalog" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="api-integration.js"></script>
+  <script type="module" src="app.js"></script>
+  <script>
+    // Debug function to check environment variables
+    window.debugAPIConfig = function() {
+        console.log('🔍 DEBUG: Checking API Configuration...');
+        
+        // Check if we can access import.meta.env (this will fail in regular script tags)
+        try {
+            console.log('❌ Cannot access import.meta.env from regular script tag');
+            console.log('ℹ️ Environment variables are only available in ES modules');
+        } catch (error) {
+            console.log('❌ Error accessing environment:', error.message);
+        }
+        
+        console.log('ℹ️ To check your .env file manually, look for these variables:');
+        console.log('- VITE_TRELLO_API_KEY');
+        console.log('- VITE_TRELLO_TOKEN'); 
+        console.log('- VITE_TRELLO_BOARD_ID');
+        console.log('- VITE_AIRTABLE_API_KEY');
+        console.log('- VITE_AIRTABLE_BASE_ID');
+        
+        // Check if functions exist
+        console.log('Functions available:');
+        console.log('- loadTrelloLists:', typeof window.loadTrelloLists);
+        console.log('- loadProductCatalogFromAirtable:', typeof window.loadProductCatalogFromAirtable);
+    };
+    
+    // Test Airtable connection with detailed debugging
+    window.testAirtableConnection = async function() {
+        console.log('🧪 Testing Airtable Connection...');
+        showNotification('Testing Airtable API connection...', 'info');
+        
+        try {
+            // This simulates what the actual function does but with more logging
+            console.log('1. Checking if loadProductCatalogFromAirtable exists...');
+            if (typeof window.loadProductCatalogFromAirtable !== 'function') {
+                throw new Error('loadProductCatalogFromAirtable function not found');
+            }
+            
+            console.log('2. Calling loadProductCatalogFromAirtable...');
+            const result = await window.loadProductCatalogFromAirtable();
+            
+            console.log('3. Result:', result);
+            if (result && result.length > 0) {
+                console.log(`✅ Success! Loaded ${result.length} products from Airtable`);
+                showNotification(`✅ Loaded ${result.length} products from Airtable!`, 'success');
+            } else {
+                console.log('⚠️ Function returned but no products loaded');
+                showNotification('⚠️ No products loaded from Airtable', 'warning');
+            }
+        } catch (error) {
+            console.error('❌ Airtable test failed:', error);
+            showNotification(`❌ Airtable error: ${error.message}`, 'error');
+        }
+    };
+    
+    // Test functions that can be called from buttons
+    window.testTrelloLoad = function() {
+        console.log('🧪 Testing Trello load...');
+        showNotification('Testing Trello connection...', 'info');
+        
+        if (typeof window.loadTrelloLists === 'function') {
+            console.log('✅ loadTrelloLists function found, calling it...');
+            window.loadTrelloLists();
+        } else {
+            console.log('❌ loadTrelloLists function not found');
+            showNotification('Trello functions not loaded. Check console for errors.', 'error');
+        }
+    };
+    
+    window.testAirtableLoad = function() {
+        console.log('🧪 Testing Airtable load...');
+        showNotification('Testing Airtable connection...', 'info');
+        
+        if (typeof window.loadProductCatalogFromAirtable === 'function') {
+            console.log('✅ loadProductCatalogFromAirtable function found, calling it...');
+            window.loadProductCatalogFromAirtable();
+        } else {
+            console.log('❌ loadProductCatalogFromAirtable function not found');
+            showNotification('Airtable functions not loaded. Check console for errors.', 'error');
+        }
+    };
+    
+    window.testTrelloRefresh = function() {
+        console.log('🧪 Testing Trello card refresh...');
+        const listId = document.getElementById('trelloListSelect').value;
+        
+        if (!listId) {
+            showNotification('Please select a Trello list first', 'warning');
+            console.log('❌ No list selected');
+            return;
+        }
+        
+        console.log('✅ List selected:', listId);
+        showNotification('Loading cards from selected list...', 'info');
+        
+        if (typeof window.refreshTrelloCards === 'function') {
+            console.log('✅ refreshTrelloCards function found, calling it...');
+            window.refreshTrelloCards();
+        } else {
+            console.log('❌ refreshTrelloCards function not found');
+            showNotification('Trello card functions not loaded. Check console for errors.', 'error');
+        }
+    };
+    
+    // ---------- Init state ----------
+    let quoteCounter = 2025001;
+    let autoSaveInterval; let isDirty = false;
+
+    // Trello configuration (client only needs the board ID). Do NOT put keys/tokens here.
+// Use the serverless proxy below. Set this to your real Trello board ID (safe to expose):
+const TRELLO_BOARD_ID = '686da04ff3f765a86406b2c0';
+
+    document.getElementById('quoteNumber').textContent = `QT-${quoteCounter}`;
+
+    // Default expiration date (+30 days)
+    const expDate = new Date(); expDate.setDate(expDate.getDate() + 30);
+    document.getElementById('quoteValidUntil').value = expDate.toISOString().split('T')[0];
+
+    // Currency formatter
+    const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    // ---------- Product Catalog ----------
+    // Products will be loaded from Airtable API - no hardcoded data
+    let productCatalog = [];
+
+    function initializeProductCatalog(){ 
+      if (productCatalog.length === 0) {
+        showNotification('Product catalog not loaded. Configure Airtable API first.', 'warning');
+      }
+      displayProducts(productCatalog); 
+    }
+
+    function toggleProductModal(){
+      const modal = document.getElementById('productModal');
+      const nowOpen = modal.style.display === 'block';
+      modal.style.display = nowOpen ? 'none' : 'block';
+      document.body.style.overflow = nowOpen ? 'auto' : 'hidden';
+      if (!nowOpen) displayProducts(productCatalog);
+    }
+
+    function filterByCategory(){
+      const selected = document.getElementById('productCategorySelect').value;
+      if (productCatalog.length === 0) {
+        showNotification('Product catalog not loaded. Configure Airtable API first.', 'warning');
+        return;
+      }
+      if (!selected) return toggleProductModal(), displayProducts(productCatalog);
+      const filtered = productCatalog.filter(p => p.category === selected);
+      toggleProductModal(); displayProducts(filtered);
+    }
+
+    function displayProducts(products){
+      const container = document.getElementById('productCatalog');
+      if (!products.length){ container.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:40px;">No products found.</div>'; return; }
+      const grouped = products.reduce((acc, p)=>{ (acc[p.category] ||= []).push(p); return acc; }, {});
+      let html = '';
+      Object.keys(grouped).sort().forEach(category => {
+        html += `<div style="margin-bottom:24px;"><h4 style="color:var(--text-primary); margin-bottom:12px; padding-bottom:6px; border-bottom:2px solid var(--accent-color); font-size:1.1rem;">${category}</h4>`;
+        grouped[category].forEach(product => {
+          const unavailableStyle = !product.available ? 'opacity:.6; text-decoration: line-through;' : '';
+          const unavailableNote = !product.available ? `<span style="color: var(--error-color); font-size:.8rem; font-weight:500;"> (${product.note})</span>` : '';
+          html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; margin:6px 0; background:var(--background-light); border-radius:8px; border:1px solid var(--border-color); transition: all .2s; ${unavailableStyle}"
+              onmouseover="this.style.borderColor='var(--accent-color)'; this.style.transform='translateY(-1px)'"
+              onmouseout ="this.style.borderColor='var(--border-color)'; this.style.transform='translateY(0)'">
+              <span style="color:var(--text-primary); font-weight:500;">${product.name}${unavailableNote}</span>
+              <button onclick="addProductToQuoteAndClose('${product.name.replace(/'/g, "\\'")}', '${product.category}')" class="btn btn-primary" style="padding:8px 16px; font-size:.9rem;" ${!product.available ? 'disabled' : ''}>+ Add to Quote</button>
+            </div>`;
+        });
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    function filterProducts(){
+      const term = document.getElementById('productSearch').value.toLowerCase();
+      const filtered = productCatalog.filter(p => p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term));
+      displayProducts(filtered);
+    }
+
+    function createItemRow(){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" name="product[]" placeholder="Enter product name" onchange="updateProgress()" /></td>
+        <td><input type="text" name="specs[]" placeholder="Size, material, colors, etc." /></td>
+        <td><input type="number" name="quantity[]" value="1000" min="1" onchange="calculateRow(this)" /></td>
+        <td><input type="number" name="unitPrice[]" step="0.001" placeholder="0.000" onchange="calculateRow(this)" /></td>
+        <td><input type="number" name="setupFee[]" step="0.01" placeholder="0.00" onchange="calculateRow(this)" /></td>
+        <td><input type="number" name="total[]" step="0.01" placeholder="0.00" readonly /></td>
+        <td><button type="button" onclick="removeRow(this)" class="btn" style="background: var(--error-color); color: #fff; padding: 8px 12px; font-size: .8rem;">×</button></td>`;
+      return tr;
+    }
+
+    function addProductToQuote(name, category){
+      const body = document.getElementById('itemsTableBody');
+      const firstRow = body.rows[0];
+      const firstRowProduct = firstRow.querySelector('input[name="product[]"]').value;
+      let row = (!firstRowProduct.trim()) ? firstRow : createItemRow();
+      if (row !== firstRow) body.appendChild(row);
+      row.querySelector('input[name="product[]"]').value = name;
+      row.querySelector('input[name="specs[]"]').placeholder = `Enter specifications for ${name}`;
+      let defaultQty = 1000; if (category==='Promotional') defaultQty=500; if (category==='Labels') defaultQty=5000; if (category==='Matches') defaultQty=2500;
+      row.querySelector('input[name="quantity[]"]').value = defaultQty;
+      updatePreview(); markDirty(); showNotification(`${name} added to quote!`);
+    }
+    function addProductToQuoteAndClose(name, category){ addProductToQuote(name, category); toggleProductModal(); }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e)=>{ const modal = document.getElementById('productModal'); if (e.target === modal) toggleProductModal(); });
+    // Close modal with ESC
+    document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && document.getElementById('productModal').style.display==='block') toggleProductModal(); });
+
+    function addRow(){
+      const body = document.getElementById('itemsTableBody');
+      const newRow = createItemRow();
+      body.appendChild(newRow); markDirty(); updatePreview();
+    }
+    function removeRow(btn){
+      const body = document.getElementById('itemsTableBody');
+      if (body.rows.length > 1){ btn.closest('tr').remove(); calculateTotals(); updatePreview(); markDirty(); }
+    }
+
+    function calculateRow(input){
+      const row = input.closest('tr');
+      const quantity = parseFloat(row.querySelector('input[name="quantity[]"]').value) || 0;
+      const unitPrice = parseFloat(row.querySelector('input[name="unitPrice[]"]').value) || 0;
+      const setupFee = parseFloat(row.querySelector('input[name="setupFee[]"]').value) || 0;
+      const total = (unitPrice * quantity) + setupFee;
+      row.querySelector('input[name="total[]"]').value = total.toFixed(2);
+      calculateTotals(); updatePreview(); markDirty();
+    }
+
+    function calculateTotals(){
+      const totals = document.querySelectorAll('input[name="total[]"]');
+      let subtotal = 0; totals.forEach(i=> subtotal += parseFloat(i.value) || 0);
+      const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+      const tax = subtotal * (taxRate/100); const grand = subtotal + tax;
+      const depositPercent = parseFloat(document.getElementById('depositPercent').value) || 0;
+      const depositAmount = grand * (depositPercent/100);
+      document.getElementById('previewTaxRate').textContent = taxRate.toFixed(2).replace(/\.00$/,'');
+      document.getElementById('previewSubtotal').textContent = USD.format(subtotal);
+      document.getElementById('previewTax').textContent = USD.format(tax);
+      document.getElementById('previewTotal').textContent = USD.format(grand);
+      document.getElementById('previewDeposit').textContent = USD.format(depositAmount);
+    }
+
+    function updatePreview(){
+      const body = document.getElementById('itemsTableBody');
+      const itemsPreview = document.getElementById('itemsPreview');
+      let html = '';
+      for (let i=0;i<body.rows.length;i++){
+        const row = body.rows[i];
+        const product = row.querySelector('input[name="product[]"]').value;
+        const specs = row.querySelector('input[name="specs[]"]').value;
+        const quantity = row.querySelector('input[name="quantity[]"]').value;
+        const unitPrice = row.querySelector('input[name="unitPrice[]"]').value;
+        const setupFee = row.querySelector('input[name="setupFee[]"]').value;
+        const total = row.querySelector('input[name="total[]"]').value;
+        if (product.trim()) {
+          html += `
+            <div style="padding: 12px; margin: 8px 0; background: var(--background-light); border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-weight: 600; color: var(--text-primary);">${product}</div>
+              ${specs ? `<div style="font-size: 0.9rem; color: var(--text-secondary); margin: 4px 0;">${specs}</div>` : ''}
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <span style="color: var(--text-secondary);">${quantity} units</span>
+                <span style="font-weight: 600;">${USD.format(parseFloat(total) || 0)}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+      itemsPreview.innerHTML = html || '<p style="color: var(--text-light); font-style: italic; text-align: center; padding: 24px;">Add items to see preview</p>';
+      
+      // Update timeline preview
+      const validUntil = document.getElementById('quoteValidUntil').value;
+      const delivery = document.getElementById('deliveryTime').value;
+      const payment = document.getElementById('paymentTerms').value;
+      
+      document.getElementById('validUntilPreview').textContent = validUntil ? new Date(validUntil).toLocaleDateString() : 'Not set';
+      document.getElementById('deliveryPreview').textContent = delivery;
+      document.getElementById('paymentPreview').textContent = payment;
+      
+      calculateTotals();
+    }
+    
+    function updateProgress(){
+      const required = ['clientCompany', 'contactName', 'contactEmail', 'projectName'];
+      const filled = required.filter(id => document.getElementById(id).value.trim());
+      const hasItems = document.querySelector('input[name="product[]"]').value.trim();
+      const progress = ((filled.length / required.length) * 70) + (hasItems ? 30 : 0);
+      document.getElementById('progressFill').style.width = progress + '%';
+    }
+    
+    function markDirty(){ isDirty = true; }
+    
+    function showNotification(message, type = 'success'){
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+      setTimeout(() => notification.classList.remove('show'), 3000);
+    }
+    
+    // Auto-save functionality
+    function autoSave(){
+      if (!isDirty) return;
+      isDirty = false;
+      const saveBtn = document.getElementById('floatingSaveBtn');
+      saveBtn.style.background = 'var(--success-color)';
+      saveBtn.innerHTML = '✅ Saved';
+      setTimeout(() => {
+        saveBtn.innerHTML = '💾 Auto-Save';
+        saveBtn.style.background = 'var(--accent-color)';
+      }, 2000);
+      showNotification('Quote auto-saved locally');
+    }
+    
+    // Main action functions
+    function generatePDF(){
+      showNotification('PDF generation feature coming soon!', 'warning');
+    }
+    
+    function sendToCustomer(){
+      showNotification('Email feature coming soon!', 'warning');
+    }
+    
+    function previewQuote(){
+      showNotification('Preview generated in right panel');
+    }
+    
+    function duplicateQuote(){
+      showNotification('Quote duplicated!');
+    }
+    
+    function convertToInvoice(){
+      showNotification('Invoice conversion feature coming soon!', 'warning');
+    }
+    
+    function exportToCSV(){
+      showNotification('CSV export feature coming soon!', 'warning');
+    }
+    
+    function shareQuote(){
+      showNotification('Quote sharing feature coming soon!', 'warning');
+    }
+    
+    function addQuantityBreaks(){
+      showNotification('Quantity breaks feature coming soon!', 'warning');
+    }
+    
+    // Initialize
+    window.addEventListener('load', function(){
+      updateProgress();
+      calculateTotals();
+      updatePreview();
+      initializeProductCatalog();
+      
+      // Auto-save every 30 seconds
+      autoSaveInterval = setInterval(autoSave, 30000);
+      
+      // Mark dirty on form changes
+      document.getElementById('quoteForm').addEventListener('input', markDirty);
+    });
+  </script>
+</body>
+</html>
