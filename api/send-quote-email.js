@@ -22,26 +22,14 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // SMTP configuration
+    // Gmail SMTP configuration with your working credentials
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      service: 'gmail',
       auth: {
-        user: process.env.SMTP_USER || 'quotes@shureprint.com',
-        pass: process.env.SMTP_PASS
+        user: 'quotes@shureprint.com',
+        pass: 'ymec qovn yndt fbhp' // Your working Gmail App Password
       }
     });
-    
-    // Check if SMTP credentials are configured
-    if (!process.env.SMTP_PASS) {
-      return res.json({ 
-        success: true, 
-        message: `Email prepared for ${to} (SMTP not configured - simulation mode)`,
-        note: "Configure SMTP_PASS environment variable to enable email sending",
-        data: { to, customerName, projectName, quoteNumber, totalAmount }
-      });
-    }
     
     // Create email HTML
     const emailHtml = `
