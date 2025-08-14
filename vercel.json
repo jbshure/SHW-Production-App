@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "shureprint-email-api",
+  "functions": {
+    "api/send-quote-email.js": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/send-quote-email",
+      "dest": "/api/send-quote-email.js"
+    }
+  ],
+  "env": {
+    "SMTP_USER": "@smtp_user",
+    "SMTP_PASS": "@smtp_pass"
+  }
+}
