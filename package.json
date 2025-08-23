@@ -1,7 +1,11 @@
 {
-  "name": "shureprint-quote-builder",
+  "name": "shw-production-webapp",
   "version": "1.0.0",
-  "description": "Unified ShurePrint application with quote builder and art proof system",
+  "description": "SHW Production Webapp - Comprehensive production management system for ShurePrint/Hwood Group teams",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shurehw/SHW-Production-Webapp.git"
+  },
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

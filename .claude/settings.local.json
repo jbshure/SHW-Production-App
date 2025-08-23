@@ -85,7 +85,8 @@
       "Read(/C:\\Users\\JacobShure\\OneDrive - Hwood Group\\Pictures\\Screenshots/**)",
       "Bash(start http://localhost:3000/quote-builder.html?v=4)",
       "Read(/C:\\/**)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(gh repo create:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

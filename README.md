@@ -1,6 +1,6 @@
-# ShurePrint Quote Builder - Production Team Web App
+# SHW Production Webapp
 
-A production-ready web application for ShurePrint's sales and production teams to create, manage, and track custom quotes for print products with full customer approval workflow.
+A comprehensive production management web application for ShurePrint/Hwood Group's sales and production teams. This system handles quote creation, customer approvals, order tracking, and payment processing with full integration to Trello, Airtable, and payment systems.
 
 ## Production Features
 
