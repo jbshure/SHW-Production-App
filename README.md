@@ -1,13 +1,27 @@
-# ShurePrint Quote Builder
+# ShurePrint Quote Builder - Production Team Web App
 
-A web-based quote builder application for ShurePrint's sales team to create custom quotes for print products.
+A production-ready web application for ShurePrint's sales and production teams to create, manage, and track custom quotes for print products with full customer approval workflow.
 
-## Features
+## Production Features
 
-- **Trello Integration**: Pull project details from Trello boards (Pre-Order Sales/Quoting lists)
-- **Airtable Integration**: Load product catalog and pricing from Airtable
-- **Supabase Backend**: Store and manage quotes
-- **Brand Aligned**: Styled to match shureprint.com branding
+### Core Functionality
+- **Quote Management**: Create, edit, and track quotes with full audit trail
+- **Customer Approval System**: Secure links for customers to review and approve quotes
+- **PDF Generation**: Professional quote PDFs with company branding
+- **Email Service**: Automated quote delivery and payment reminders
+- **Payment Delegation**: Allow customers to delegate payment to accounting teams
+
+### Integrations
+- **Trello Integration**: Automatic card creation and PDF attachments on approval
+- **Airtable Integration**: Real-time product catalog and pricing sync
+- **Supabase Backend**: Secure quote storage and retrieval
+- **Stripe Payments**: Secure payment processing for deposits and final payments
+
+### Production Team Features
+- **Order Tracking**: Monitor quote status from creation to fulfillment
+- **Automated Reminders**: 7-day, 14-day, and urgent payment reminders
+- **Sales Dashboard**: Track team performance and quote metrics
+- **Brand Aligned**: Professional design matching shureprint.com
 
 ## Setup
 
