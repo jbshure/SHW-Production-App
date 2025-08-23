@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Quotes Dashboard – SHUREPRINT</title>
+
+  <!-- Brand typography -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Shureprint admin theme */
+      --ink:#111111;
+      --text:#222222;
+      --muted:#6b6b6b;
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --cream:#FFF9F0;       /* soft section bg */
+      --neon:#E3FF33;        /* accent */
+      --stroke:#e9e9e9;
+      --soft:#f7f7f7;
+      --radius:14px;
+      --radius-sm:10px;
+      --shadow:0 8px 28px rgba(0,0,0,.08);
+    }
+
+    /* reset */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      background:var(--bg);
+      color:var(--text);
+      font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      min-height:100%;
+    }
+
+    /* layout */
+    .container{max-width:1400px;margin:0 auto;padding:24px}
+
+    header{
+      background:var(--cream);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:18px 22px;
+      margin-bottom:24px;
+      box-shadow:var(--shadow);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    }
+    h1{color:var(--ink);font-size:28px;line-height:1.2;font-weight:800}
+
+    /* Admin navigation */
+    .admin-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .admin-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .15s ease;
+    }
+    .admin-link:hover {
+      color: var(--ink);
+      background: var(--soft);
+      text-decoration: none;
+    }
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+    .stat-card{background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .stat-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .stat-value{font-size:28px;font-weight:800;color:var(--ink)}
+    
+    /* Grid table styles */
+    .grid-table-container { width: 100%; background: #fff; padding: 20px; border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+    .grid-table-container h3 { margin-bottom: 16px; font-size: 20px; color: var(--ink); }
+    
+    /* Grid controls */
+    .grid-controls { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .search-box { flex: 1; min-width: 250px; position: relative; }
+    .search-input { width: 100%; padding: 10px 12px 10px 36px; border: 1.5px solid var(--stroke); border-radius: 10px; font-size: 14px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    
+    /* Status filters */
+    .status-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn { padding: 8px 14px; border: 1.5px solid var(--stroke); background: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+    .filter-btn:hover { background: var(--soft); border-color: var(--muted); }
+    .filter-btn.active { background: var(--neon); border-color: var(--neon); color: #000; }
+    .filter-count { opacity: 0.7; margin-left: 4px; }
+    
+    /* Enhanced table */
+    .grid-table { width: 100%; border-collapse: collapse; }
+    .grid-table thead tr { border-bottom: 2px solid #e9e9e9; }
+    .grid-table th { text-align: left; padding: 12px 8px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; user-select: none; }
+    .grid-table th:hover { color: var(--ink); }
+    .sort-indicator { margin-left: 6px; font-size: 11px; }
+    .grid-table tbody tr { border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.15s; }
+    .grid-table tbody tr:hover { background-color: var(--cream); }
+    .grid-table td { padding: 12px 8px; font-size: 14px; }
+    
+    /* Status badges */
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
+    .status-draft { background: #f0f0f0; color: #666; }
+    .status-sent { background: #e3f2fd; color: #1976d2; }
+    .status-viewed { background: #f3e5f5; color: #7b1fa2; }
+    .status-approved { background: #e8f5e9; color: #2e7d32; }
+    .status-rejected { background: #ffebee; color: #c62828; }
+    .status-expired { background: #fff3e0; color: #f57c00; }
+    .status-paid { background: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; }
+    
+    /* Action buttons */
+    .action-buttons { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .action-btn:hover {
+      border-color: var(--neon);
+      background: var(--cream);
+    }
+    .action-btn.primary {
+      background: var(--neon);
+      border-color: var(--neon);
+      color: #000;
+    }
+    
+    /* Loading spinner */
+    .loading { display: none; text-align: center; padding: 40px; color: var(--muted); }
+    .loading.active { display: block; }
+    
+    /* Empty state */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state h3 { color: var(--ink); margin-bottom: 8px; }
+    
+    /* New quote button */
+    .new-quote-btn {
+      background: var(--neon);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .new-quote-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="container with-sidebar">
+    <header>
+      <div>
+        <h1>Quotes Dashboard</h1>
+      </div>
+      <div class="admin-nav" style="display: none;">
+        <button class="new-quote-btn" onclick="window.location.href='/quote-builder.html'">
+          + New Quote
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Quotes</div>
+        <div class="stat-value" id="total-quotes">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending Approval</div>
+        <div class="stat-value" id="pending-quotes">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value" id="approved-quotes">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Value</div>
+        <div class="stat-value" id="total-value">$0</div>
+      </div>
+    </div>
+
+    <!-- Grid Table -->
+    <div class="grid-table-container">
+      <h3>All Quotes</h3>
+      
+      <!-- Controls -->
+      <div class="grid-controls">
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input type="text" class="search-input" id="search-input" placeholder="Search quotes...">
+        </div>
+        <div class="status-filters">
+          <button class="filter-btn active" data-status="all">All <span class="filter-count">0</span></button>
+          <button class="filter-btn" data-status="draft">Draft <span class="filter-count">0</span></button>
+          <button class="filter-btn" data-status="sent">Sent <span class="filter-count">0</span></button>
+          <button class="filter-btn" data-status="viewed">Viewed <span class="filter-count">0</span></button>
+          <button class="filter-btn" data-status="approved">Approved <span class="filter-count">0</span></button>
+          <button class="filter-btn" data-status="paid">Paid <span class="filter-count">0</span></button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-scroll">
+        <table class="grid-table" id="quotes-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('quoteNumber')">Quote # <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('projectName')">Project <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('customerName')">Customer <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('status')">Status <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('totalAmount')">Amount <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('createdDate')">Created <span class="sort-indicator"></span></th>
+              <th onclick="sortTable('lastActivity')">Last Activity <span class="sort-indicator"></span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="quotes-tbody">
+            <!-- Quotes will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading" id="loading">
+        Loading quotes...
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state" style="display: none;">
+        <h3>No quotes found</h3>
+        <p>Create your first quote to get started</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="quotes-dashboard.js"></script>
+  <script src="/shared-navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - SHUREPRINT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .error-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 20px;
+        }
+
+        .logo {
+            color: #D4AF37;
+            font-size: 2em;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .error-icon {
+            font-size: 4em;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+
+        .help-text {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .contact-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .contact-info strong {
+            color: #D4AF37;
+        }
+
+        @media (max-width: 600px) {
+            .error-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .logo {
+                font-size: 1.5em;
+            }
+            
+            .error-icon {
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo">S H U R E P R I N T</div>
+        
+        <div class="error-icon"><%= locals.isExpired ? '⏰' : '⚠️' %></div>
+        
+        <div class="error-title"><%= locals.isExpired ? 'Proof Link Expired' : 'Access Error' %></div>
+        
+        <div class="error-message">
+            <%= message %>
+            <% if (locals.details) { %>
+                <br><br><strong><%= details %></strong>
+            <% } %>
+        </div>
+        
+        <% if (locals.nextSteps) { %>
+        <div class="contact-info">
+            <strong>Next Steps:</strong><br>
+            <%= nextSteps %>
+        </div>
+        <% } else { %>
+        <div class="help-text">
+            If you continue to experience issues, please contact your sales representative or our support team.
+        </div>
+        
+        <div class="contact-info">
+            <strong>Need Help?</strong><br>
+            Email: support@shureprint.com<br>
+            Phone: (555) 123-4567
+        </div>
+        <% } %>
+    </div>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Configuration - SHUREPRINT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    h1 {
+      margin-bottom: 30px;
+      color: #333;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 15px;
+    }
+    .competitor-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #fafafa;
+    }
+    .competitor-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .config-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .config-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .config-input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .selectors-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #45a049;
+    }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .btn-test {
+      background: #2196F3;
+      color: white;
+      margin-left: 10px;
+    }
+    .status {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status.active { background: #d4edda; color: #155724; }
+    .status.inactive { background: #f8d7da; color: #721c24; }
+    .test-results {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f0f8ff;
+      border-radius: 6px;
+      border: 1px solid #b0d4ff;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Competitor Configuration Manager</h1>
+    
+    <div id="competitors-list">
+      <!-- Competitors will be loaded here -->
+    </div>
+    
+    <button class="btn btn-primary" onclick="saveAllConfigurations()">💾 Save All Configurations</button>
+    <button class="btn btn-secondary" onclick="addNewCompetitor()">➕ Add New Competitor</button>
+  </div>
+
+  <script>
+    // Load current competitor configurations
+    const competitors = {
+      vistaprint: {
+        id: 'vistaprint',
+        name: 'Vistaprint',
+        baseUrl: 'https://www.vistaprint.com',
+        searchPath: '/search?query=',
+        selectors: {
+          productCard: '.product-card, .search-result-item',
+          productName: '.product-name, .product-title, h3',
+          price: '.price-value, .product-price, .pricing-price',
+          originalPrice: '.original-price, .was-price'
+        },
+        requiresJS: true,
+        active: true
+      },
+      printful: {
+        id: 'printful',
+        name: 'Printful',
+        baseUrl: 'https://www.printful.com',
+        searchPath: '/custom-products/search?q=',
+        selectors: {
+          productCard: '.product-grid-item',
+          productName: '.product-title',
+          price: '.product-price',
+          originalPrice: '.product-price--compare'
+        },
+        requiresJS: false,
+        active: true
+      },
+      gotprint: {
+        id: 'gotprint',
+        name: 'GotPrint',
+        baseUrl: 'https://www.gotprint.com',
+        searchPath: '/search.html?keywords=',
+        selectors: {
+          productCard: '.product-item',
+          productName: '.product-name',
+          price: '.price',
+          originalPrice: '.old-price'
+        },
+        requiresJS: false,
+        active: true
+      },
+      uprinting: {
+        id: 'uprinting',
+        name: 'UPrinting',
+        baseUrl: 'https://www.uprinting.com',
+        searchPath: '/search?q=',
+        selectors: {
+          productCard: '.product-item',
+          productName: '.product-title',
+          price: '.price-now',
+          originalPrice: '.price-was'
+        },
+        requiresJS: true,
+        active: true
+      },
+      psprint: {
+        id: 'psprint',
+        name: 'PsPrint',
+        baseUrl: 'https://www.psprint.com',
+        searchPath: '/search?text=',
+        selectors: {
+          productCard: '.product-tile',
+          productName: '.product-name',
+          price: '.product-price',
+          originalPrice: '.strikethrough-price'
+        },
+        requiresJS: false,
+        active: true
+      }
+    };
+
+    function renderCompetitors() {
+      const container = document.getElementById('competitors-list');
+      container.innerHTML = '';
+      
+      Object.values(competitors).forEach(comp => {
+        const card = document.createElement('div');
+        card.className = 'competitor-card';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="competitor-name">${comp.name}</div>
+            <div>
+              <span class="status ${comp.active ? 'active' : 'inactive'}">${comp.active ? 'Active' : 'Inactive'}</span>
+              <button class="btn btn-test" onclick="testCompetitor('${comp.id}')">Test Scraper</button>
+            </div>
+          </div>
+          
+          <div class="config-grid">
+            <div class="config-item">
+              <label class="config-label">Base URL</label>
+              <input type="url" class="config-input" id="${comp.id}-baseUrl" value="${comp.baseUrl}">
+            </div>
+            <div class="config-item">
+              <label class="config-label">Search Path</label>
+              <input type="text" class="config-input" id="${comp.id}-searchPath" value="${comp.searchPath}">
+            </div>
+          </div>
+          
+          <div class="selectors-section">
+            <div class="config-label" style="margin-bottom: 10px;">CSS Selectors</div>
+            <div class="selector-grid">
+              <div class="config-item">
+                <label class="config-label">Product Card</label>
+                <input type="text" class="config-input" id="${comp.id}-productCard" value="${comp.selectors.productCard}">
+              </div>
+              <div class="config-item">
+                <label class="config-label">Product Name</label>
+                <input type="text" class="config-input" id="${comp.id}-productName" value="${comp.selectors.productName}">
+              </div>
+              <div class="config-item">
+                <label class="config-label">Price</label>
+                <input type="text" class="config-input" id="${comp.id}-price" value="${comp.selectors.price}">
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+              <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="${comp.id}-requiresJS" ${comp.requiresJS ? 'checked' : ''}>
+                <span style="font-size: 14px;">Requires JavaScript rendering (uses Puppeteer)</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="test-results" id="${comp.id}-results"></div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function testCompetitor(competitorId) {
+      const resultsDiv = document.getElementById(`${competitorId}-results`);
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '⏳ Testing scraper for "business cards"...';
+      
+      try {
+        const response = await fetch('/api/competitor-prices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productName: 'business cards',
+            productSKU: 'TEST-001'
+          })
+        });
+        
+        const data = await response.json();
+        
+        // Check if the response has the expected structure
+        if (!data || !data.competitors) {
+          resultsDiv.innerHTML = `⚠️ No competitor data returned. Check if the API is running.`;
+          return;
+        }
+        
+        // Find the specific competitor result
+        const result = data.competitors.find(c => c && c.competitorId === competitorId);
+        
+        if (result) {
+          if (result.error) {
+            resultsDiv.innerHTML = `❌ Error: ${result.error}`;
+          } else if (result.price) {
+            resultsDiv.innerHTML = `✅ Success! Found price: $${result.price} (${(result.confidence * 100).toFixed(0)}% confidence)`;
+          } else {
+            resultsDiv.innerHTML = `⚠️ No price found - check selectors`;
+          }
+        } else {
+          resultsDiv.innerHTML = `⚠️ No results for ${competitors[competitorId].name}`;
+        }
+      } catch (error) {
+        console.error('Test error:', error);
+        resultsDiv.innerHTML = `❌ Error: ${error.message || 'Failed to test competitor'}`;
+      }
+    }
+
+    function saveAllConfigurations() {
+      // Collect all configurations
+      const configs = {};
+      Object.keys(competitors).forEach(id => {
+        configs[id] = {
+          baseUrl: document.getElementById(`${id}-baseUrl`).value,
+          searchPath: document.getElementById(`${id}-searchPath`).value,
+          selectors: {
+            productCard: document.getElementById(`${id}-productCard`).value,
+            productName: document.getElementById(`${id}-productName`).value,
+            price: document.getElementById(`${id}-price`).value
+          },
+          requiresJS: document.getElementById(`${id}-requiresJS`).checked
+        };
+      });
+      
+      // Save to localStorage for now (could send to server)
+      localStorage.setItem('competitorConfigs', JSON.stringify(configs));
+      alert('✅ Configurations saved! Restart the server to apply changes.');
+    }
+
+    function addNewCompetitor() {
+      const name = prompt('Enter competitor name:');
+      if (!name) return;
+      
+      const id = name.toLowerCase().replace(/\s+/g, '');
+      competitors[id] = {
+        id: id,
+        name: name,
+        baseUrl: '',
+        searchPath: '/search?q=',
+        selectors: {
+          productCard: '',
+          productName: '',
+          price: '',
+          originalPrice: ''
+        },
+        requiresJS: false,
+        active: false
+      };
+      
+      renderCompetitors();
+    }
+
+    // Initialize
+    renderCompetitors();
+  </script>
+</body>
+</html>

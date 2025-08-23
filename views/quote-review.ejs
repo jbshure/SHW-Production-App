@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote Review - <%= quoteData.projectName %></title>
+  <style nonce="<%= locals.cspNonce %>">
+    :root {
+      --cream:#FFF9F0;
+      --gold:#E3FF33; /* brand-accent neon */
+      --pink:#F7D8EA;
+      --ink:#111111;
+      --text:#333333;
+      --muted:#666666;
+      --stroke:#E2DFDA;
+      --bg:#FAF9F7;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif}
+    .page{display:grid;place-items:start center;padding:32px}
+    .card{width:min(920px,96vw);background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.07);overflow:hidden;border:1px solid #eee}
+
+    .card__header{background:var(--cream);padding:20px 24px 10px;border-bottom:1px solid var(--stroke)}
+    .logo{height:40px;width:auto}
+    .title{margin:10px 0 0;font-size:26px;font-weight:800;color:var(--ink)}
+    .title .tag{background:transparent;border:none;border-radius:0;padding:0}
+
+    .meta{padding:18px 24px;border-bottom:1px solid var(--stroke)}
+    .meta .row{display:flex;gap:24px;align-items:center;margin:6px 0;flex-wrap:wrap}
+    .meta span{color:var(--muted);margin-right:6px}
+    .meta .token{background:var(--cream);border:1px solid var(--stroke);border-radius:6px;padding:2px 6px;font-style:normal;color:var(--ink)}
+    .meta .stretch{flex:1 1 auto}
+
+    .quote{padding:16px 24px}
+    .quote h3{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink)}
+    .quote .quotebox{border:2px solid var(--stroke);border-radius:12px;overflow:hidden;background:#fff;padding:20px}
+    .quote-details{margin:16px 0;line-height:1.6}
+    .quote-item{padding:12px 0;border-bottom:1px solid #f0f0f0;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:12px;align-items:center}
+    .quote-item:last-child{border-bottom:2px solid var(--stroke);margin-bottom:12px}
+    .quote-item .checkbox{width:18px;height:18px;accent-color:var(--gold)}
+    .quote-item .description{font-weight:500}
+    .quote-item .case-size{color:var(--muted);font-size:12px;margin-top:2px}
+    .quote-item .price-info{display:flex;flex-direction:column;align-items:flex-end;min-width:100px}
+    .quote-item .unit-price{color:var(--muted);font-size:14px}
+    .quote-item .per-piece{color:var(--text);font-size:12px;font-weight:500}
+    .quote-item .starts-at{color:var(--gold);font-size:12px;font-weight:600;background:var(--ink);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px}
+    .quote-item .qty-select{width:80px;height:32px;border:1px solid var(--stroke);border-radius:6px;padding:0 8px;text-align:center}
+    .quote-item .qty-info{display:flex;align-items:center;gap:8px}
+    .quote-item .qty-breakdown-btn{background:none;border:1px solid var(--stroke);color:var(--text);padding:0 8px;border-radius:4px;font-size:11px;cursor:pointer;white-space:nowrap;height:32px;display:flex;align-items:center;justify-content:center}
+    .quote-item .qty-breakdown-btn:hover{background:var(--cream)}
+
+    /* Quantity Modal Styles */
+    .qty-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1000;backdrop-filter:blur(3px)}
+    .qty-modal.show{display:flex;align-items:center;justify-content:center;padding:20px}
+    .qty-modal-content{background:#fff;border-radius:16px;padding:32px;max-width:600px;width:95%;box-shadow:0 20px 40px rgba(0,0,0,0.15);border:1px solid var(--stroke)}
+    .qty-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--stroke)}
+    .qty-modal-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:0.02em}
+    .qty-modal-close{background:var(--cream);border:1px solid var(--stroke);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text);transition:all 0.2s}
+    .qty-modal-close:hover{background:var(--stroke);color:var(--ink)}
+    .qty-modal-item-name{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:20px;padding:12px;background:var(--cream);border-radius:8px;border-left:4px solid var(--gold)}
+    .qty-breakdown-table{width:100%;border-collapse:collapse;margin:20px 0;border:1px solid var(--stroke);border-radius:8px;overflow:hidden}
+    .qty-breakdown-table th{padding:12px 16px;text-align:left;background:var(--ink);color:#fff;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+    .qty-breakdown-table td{padding:14px 16px;text-align:left;border-bottom:1px solid #f5f5f5;font-size:14px}
+    .qty-breakdown-table tr:last-child td{border-bottom:none}
+    .qty-breakdown-table tr:nth-child(even){background:#fafafa}
+    .qty-breakdown-table tr:hover{background:var(--cream)}
+    .qty-breakdown-table .qty-col{font-weight:600;color:var(--ink)}
+    .qty-breakdown-table .price-col{font-weight:600;color:var(--text)}
+    .qty-breakdown-table .total-col{font-weight:700;color:var(--ink)}
+    .qty-breakdown-table .savings{color:#28a745;font-weight:700;background:#f0f9f0;padding:4px 8px;border-radius:4px;font-size:13px}
+    .qty-breakdown-table .no-savings{color:var(--muted);font-style:italic}
+    .qty-modal-footer{margin-top:24px;padding-top:20px;border-top:1px solid var(--stroke);font-size:13px;color:var(--muted);line-height:1.5}
+
+    /* CS Pricing Display */
+    .cs-price{font-size:12px;color:#007bff;font-weight:600;margin-bottom:2px}
+    .cs-highlight{color:#007bff !important;font-weight:700;background:#e7f3ff}
+    .price-info{display:flex;flex-direction:column;align-items:flex-end;position:relative}
+    .unit-price{font-size:16px;font-weight:700;color:var(--ink)}
+    .per-piece{font-size:11px;color:var(--muted);margin-top:2px}
+    .quote-item .line-total{font-weight:600;min-width:80px;text-align:right}
+    .quote-item.disabled{opacity:0.5}
+    .quote-item.disabled .qty-select{background:#f5f5f5;color:#999}
+    .quote-item .req{font-size:11px;border:1px solid var(--stroke);padding:2px 6px;border-radius:4px;margin-left:6px}
+
+    .quote-summary{margin-top:16px;padding:16px;background:var(--cream);border-radius:8px;border:1px solid var(--stroke)}
+    .summary-line{display:flex;justify-content:space-between;margin:4px 0;padding:2px 0}
+    .summary-line.total{font-weight:bold;font-size:18px;color:var(--ink);border-top:1px solid var(--stroke);margin-top:8px;padding-top:8px}
+    .summary-line.deposit{color:var(--ink);font-weight:600}
+
+    .form{padding:8px 24px 24px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .label{display:block;font-size:14px;font-weight:700;color:var(--ink);margin:6px 0}
+    .check{display:flex;align-items:center;gap:8px;margin:6px 0}
+    .check input{width:16px;height:16px;accent-color:var(--gold)}
+
+    .disclaimer{font-size:13px;color:var(--muted);margin:12px 0;max-width:420px}
+    .quote-terms{margin-top:20px;padding-top:16px;border-top:1px solid var(--stroke);font-size:14px;color:var(--muted)}
+    .loading{display:none;text-align:center;padding:12px}
+    .result{display:none;margin-top:12px;padding:12px;border-radius:5px}
+
+    textarea{width:100%;min-height:120px;border:2px solid var(--stroke);border-radius:10px;padding:10px;resize:vertical;font:inherit}
+    textarea:focus, .mini input:focus { outline:none;border-color:var(--gold); }
+
+    .sigrow{display:grid;grid-template-columns:1fr 220px 1fr;gap:24px;margin-top:18px;align-items:start}
+    .sigrow .mini{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start}
+    .sig canvas{width:100%;height:150px;border:2px solid var(--stroke);border-radius:12px;background:#fff;display:block}
+    .sig .link{margin-top:8px;background:none;border:0;color:#000;cursor:pointer;padding:0;font-weight:600}
+
+    .mini input[type="date"], .mini input[type="text"]{width:100%;height:40px;border:2px solid var(--stroke);border-radius:10px;padding:0 10px;font:inherit}
+
+    .card .btn {background: var(--gold);color: #000;border: 0;border-radius: 8px;padding: 10px 20px;font-weight: 800;line-height: 1.2;display: inline-flex;align-items: center;justify-content: center;gap: 6px;font-size: 14px;text-decoration: none;height: 40px;min-width: 140px;box-sizing: border-box}
+    .card .btn.secondary { background: var(--muted); color:#fff }
+    .card .btn:hover { filter: brightness(.95) }
+
+    .actions { padding: 24px }
+    .actions__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center }
+
+    .card__footer{height:36px;background:var(--pink)}
+
+    .loading.show { display: block }
+    .result.success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724 }
+    .result.error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24 }
+
+    :where(a,button,.qty-select,.qty-breakdown-btn,.link,input,textarea):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+    @media (max-width: 768px) {
+      .page { padding: 16px }
+      .grid { grid-template-columns: 1fr }
+      .sigrow { grid-template-columns: 1fr; gap: 16px }
+      .quote, .form { padding: 16px 20px }
+      .actions { padding: 16px 20px 24px }
+    }
+  </style>
+</head>
+<body class="page">
+  <div class="card">
+    <header class="card__header">
+      <img src="/assets/logo.png" alt="SHUREPRINT" class="logo">
+      <h1 class="title">Quote Review – <span class="tag"><%= quoteData.projectName %></span></h1>
+    </header>
+
+    <section class="meta">
+      <div class="row">
+        <span>Quote #:</span>
+        <em class="token"><%= quoteData.quoteNumber %></em>
+        <span>Version:</span>
+        <em class="token"><%= quoteData.quoteVersion %></em>
+        <span class="stretch">Date Sent:</span>
+        <em class="token"><%= quoteData.dateSent %></em>
+      </div>
+      <div class="row">
+        <span>Sales Rep:</span>
+        <em class="token"><%= quoteData.salesRepFirst %> <%= quoteData.salesRepLast %></em>
+        <span>Valid Until:</span>
+        <em class="token"><%= quoteData.validUntil %></em>
+        <span class="stretch">Client Company:</span>
+        <em class="token"><%= quoteData.clientCompany %></em>
+      </div>
+    </section>
+
+    <section class="quote">
+      <h3>QUOTE DETAILS</h3>
+      <div class="quotebox">
+        <div class="quote-details">
+          <% quoteData.quoteItems.forEach((item, index) => { %>
+          <div class="quote-item" data-item="<%= item.key %>">
+            <input type="checkbox" class="checkbox" <%= (item.required || item.selected) ? 'checked' : '' %> <%= item.required ? 'disabled' : '' %>>
+            <div class="description">
+              <div>
+                <%= item.name %>
+                <% if (item.required) { %><span class="req">Required</span><% } %>
+              </div>
+              <div class="unit-price"><%= item.description %></div>
+              <% if (item.pricingTiers && item.pricingTiers.length > 0) { %>
+                <div class="case-size">Case Size: <%= item.pricingTiers[0].description %></div>
+                <% const minUnit = Math.min(...item.pricingTiers.map(t => t.unitPrice)); %>
+                <div class="starts-at">Starts at $<%= minUnit.toFixed(2) %></div>
+              <% } else { %>
+                <div class="case-size">Case Size: 1 unit</div>
+              <% } %>
+            </div>
+            <div class="price-info">
+              <div class="cs-price">$0.00</div>
+              <div class="unit-price">$0.00</div>
+              <% const minPack = (item.basePrices && item.basePrices.length)
+                   ? Math.min(...item.basePrices.map(t => t.min)) : 1; %>
+              <div class="per-piece">$0.000/pc</div>
+            </div>
+            <div class="qty-info">
+              <select class="qty-select">
+                <% item.quantityOptions.forEach(qty => { %>
+                  <option value="<%= qty %>" <%= qty === item.defaultQuantity ? 'selected' : '' %>><%= qty %></option>
+                <% }); %>
+              </select>
+              <% if (item.basePrices && item.basePrices.length > 1) { %>
+                <button type="button" class="qty-breakdown-btn" data-key="<%= item.key %>">Qty Breaks</button>
+              <% } %>
+            </div>
+            <div class="line-total">$0.00</div>
+          </div>
+          <% }); %>
+        </div>
+        
+        <div class="quote-summary">
+          <div class="summary-line">
+            <span>Subtotal:</span>
+            <span id="subtotal">$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Tax (8.5%):</span>
+            <span id="tax">$0.00</span>
+          </div>
+          <div class="summary-line total">
+            <span>Total:</span>
+            <span id="total">$0.00</span>
+          </div>
+          <div class="summary-line deposit">
+            <span>Required Deposit (50%):</span>
+            <span id="deposit">$0.00</span>
+          </div>
+        </div>
+        
+        <div class="quote-terms">
+          <p><strong>Terms:</strong> 50% deposit required to begin work. Final payment due upon completion.</p>
+          <p><strong>Timeline:</strong> 2-3 business days from approval and deposit receipt.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="form">
+      <form id="quoteForm">
+        <input type="hidden" name="signatureDataUrl" id="signatureDataUrl" />
+        <div class="form-section">
+          <label class="label" for="comments">Special Instructions (Optional)</label>
+          <textarea name="comments" id="comments" placeholder="Any special instructions for your order..."></textarea>
+        </div>
+
+        <div class="sigrow">
+          <div class="sig">
+            <label class="label">Digital Signature *</label>
+            <canvas id="signatureCanvas" width="400" height="150"></canvas>
+            <button type="button" id="clearSignature" class="link">Clear Signature</button>
+          </div>
+          <div class="mini">
+            <label class="label" for="customerName">Name *</label>
+            <input type="text" name="customerName" id="customerName" required placeholder="Full Name">
+          </div>
+          <div class="mini">
+            <label class="label" for="date">Date</label>
+            <input type="date" id="date" name="date" value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="actions">
+      <div class="actions__row">
+        <button type="submit" form="quoteForm" class="btn" id="submitQuoteBtn">ACCEPT QUOTE & PROCEED TO PAYMENT</button>
+        <a href="<%= pdfUrl %>" target="_blank" rel="noopener" class="btn secondary">Download PDF</a>
+      </div>
+      <div class="loading">Processing your approval...</div>
+      <div id="result" class="result" aria-live="polite"></div>
+    </section>
+
+    <footer class="card__footer"></footer>
+  </div>
+
+  <script nonce="<%= locals.cspNonce %>">
+    // Safer data injection
+    const quoteItems = <%- JSON.stringify(
+      Object.fromEntries(quoteData.quoteItems.map(i => [i.key, {
+        unitPrice: i.unitPrice,
+        required: !!i.required,
+        name: i.name,
+        description: i.description,
+        basePrices: i.basePrices || [],
+        minPack: (i.basePrices && i.basePrices.length) ? Math.min(...i.basePrices.map(t=>t.min)) : 1
+      }]))
+    ) %>;
+
+    const TAX_RATE = 0.085;
+    const DEPOSIT_RATE = 0.50;
+    const fmt = new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' });
+    const toCents = n => Math.round(n * 100) / 100;
+
+    function getTierUnitPrice(itemKey, qty){
+      const base = quoteItems[itemKey]?.unitPrice || 0;
+      const tiers = quoteItems[itemKey]?.basePrices || [];
+      if (!tiers.length) return base;
+      const sorted = [...tiers].sort((a,b)=>a.min-b.min);
+      let price = base;
+      for (const t of sorted) {
+        if (qty >= t.min && qty <= t.max) {
+          price = t.price;
+          break;
+        }
+      }
+      return price;
+    }
+
+    function updatePricing() {
+      let subtotal = 0;
+
+      document.querySelectorAll('.quote-item').forEach(item => {
+        const itemKey = item.getAttribute('data-item');
+        const checkbox = item.querySelector('.checkbox');
+        const qtySelect = item.querySelector('.qty-select');
+        const lineTotalEl = item.querySelector('.line-total');
+        const unitPriceEl = item.querySelector('.price-info .unit-price');
+        const perPieceEl = item.querySelector('.price-info .per-piece');
+
+        if (checkbox.checked) {
+          const qty = parseInt(qtySelect.value) || 0;
+          const unitPrice = getTierUnitPrice(itemKey, qty);
+          const csPrice = unitPrice * 0.6; // CS gets 40% discount
+          const pack = quoteItems[itemKey]?.minPack || 1;
+          const lineTotal = unitPrice * qty;
+          subtotal += lineTotal;
+
+          // Update CS price (top) and unit price (bottom)
+          const csPriceEl = item.querySelector('.price-info .cs-price');
+          if (csPriceEl) {
+            csPriceEl.textContent = fmt.format(toCents(csPrice));
+          }
+          unitPriceEl.textContent = fmt.format(toCents(unitPrice));
+          perPieceEl.textContent = fmt.format(toCents(unitPrice / pack)) + '/pc';
+          lineTotalEl.textContent = fmt.format(toCents(lineTotal));
+
+          item.classList.remove('disabled');
+          qtySelect.disabled = false;
+        } else {
+          const csPriceEl = item.querySelector('.price-info .cs-price');
+          if (csPriceEl) {
+            csPriceEl.textContent = fmt.format(0);
+          }
+          unitPriceEl.textContent = fmt.format(0);
+          perPieceEl.textContent = fmt.format(0) + '/pc';
+          lineTotalEl.textContent = fmt.format(0);
+          item.classList.add('disabled');
+          qtySelect.disabled = true;
+        }
+      });
+
+      const tax = toCents(subtotal * TAX_RATE);
+      const total = toCents(subtotal + tax);
+      const deposit = toCents(total * DEPOSIT_RATE);
+
+      document.getElementById('subtotal').textContent = fmt.format(subtotal);
+      document.getElementById('tax').textContent = fmt.format(tax);
+      document.getElementById('total').textContent = fmt.format(total);
+      document.getElementById('deposit').textContent = fmt.format(deposit);
+
+      return { subtotal, tax, total, deposit };
+    }
+
+    // Signature canvas setup with HiDPI + touch
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(150 * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+    }
+    const getPos = e => {
+      const r = canvas.getBoundingClientRect();
+      const pt = (e.touches ? e.touches[0] : e);
+      return { x: pt.clientX - r.left, y: pt.clientY - r.top };
+    };
+    const startDraw = e => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+    const moveDraw  = e => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+    const endDraw   = () => { isDrawing = false; };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive:false});
+    canvas.addEventListener('touchmove',  moveDraw,  {passive:false});
+    canvas.addEventListener('touchend',   endDraw);
+
+    document.getElementById('clearSignature').addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    // Page init
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.quote-item').forEach(item => {
+        const itemKey = item.getAttribute('data-item');
+        const checkbox = item.querySelector('.checkbox');
+        const qtySelect = item.querySelector('.qty-select');
+        const breakdownBtn = item.querySelector('.qty-breakdown-btn');
+
+        // Required items are disabled/checked by markup; ensure state matches visuals
+        if (quoteItems[itemKey]?.required) {
+          checkbox.checked = true;
+          checkbox.disabled = true;
+          item.classList.remove('disabled');
+          qtySelect.disabled = false;
+        }
+
+        checkbox.addEventListener('change', updatePricing);
+        qtySelect.addEventListener('change', updatePricing);
+
+        if (breakdownBtn) {
+          breakdownBtn.addEventListener('click', () => showQuantityBreakdown(itemKey));
+        }
+      });
+
+      updatePricing();
+    });
+
+    // Form submission with payment delegation (inline, more robust email check)
+    document.getElementById('quoteForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const data = {};
+      for (let [key, value] of formData.entries()) data[key] = value;
+
+      if (!data.customerName?.trim()) {
+        showResult('Please provide your name to continue.', 'error');
+        return;
+      }
+
+      // Save signature image
+      document.getElementById('signatureDataUrl').value = canvas.toDataURL('image/png');
+      data.signatureDataUrl = document.getElementById('signatureDataUrl').value;
+
+      const delegatePayment = confirm(
+        "PAYMENT OPTIONS\n\n" +
+        "Do you need to delegate payment to someone else (like accounting or finance)?\n\n" +
+        "YES - Delegate payment (enter email address)\n" +
+        "NO - I'll pay myself\n\n" +
+        "Click OK to delegate payment\n" +
+        "Click Cancel to pay yourself"
+      );
+
+      if (delegatePayment) {
+        const delegateEmail = prompt(
+          "PAYMENT DELEGATION\n\n" +
+          "Enter the email address of the person who should receive the payment request:\n\n" +
+          "(They will receive payment instructions and reminders)"
+        );
+        const emailOk = delegateEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(delegateEmail);
+        if (emailOk) {
+          data.delegatePayment = true;
+          data.paymentEmail = delegateEmail;
+        } else if (delegateEmail !== null) {
+          showResult('Please enter a valid email address.', 'error');
+          return;
+        } else {
+          return; // user cancelled
+        }
+      } else {
+        data.delegatePayment = false;
+      }
+
+      data.accepted = true;
+      data.selectedItems = [];
+
+      document.querySelectorAll('.quote-item').forEach(item => {
+        const itemKey = item.getAttribute('data-item');
+        const checkbox = item.querySelector('.checkbox');
+        const qtySelect = item.querySelector('.qty-select');
+        if (!checkbox.checked) return;
+        const qty = parseInt(qtySelect.value) || 0;
+        const unitPrice = getTierUnitPrice(itemKey, qty);
+        data.selectedItems.push({
+          item: itemKey,
+          quantity: qty,
+          unitPrice: unitPrice,
+          lineTotal: toCents(unitPrice * qty)
+        });
+      });
+
+      data.pricing = updatePricing();
+
+      showResult('Quote submission test successful!\n\nPayment delegation: ' + (data.delegatePayment ? data.paymentEmail : 'Direct payment'), 'success');
+
+      // TODO: send `data` to your backend via fetch()
+      // await fetch('/api/quotes/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    });
+
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.className = 'result ' + type;
+      resultDiv.style.display = 'block';
+    }
+
+    function showQuantityBreakdown(itemKey) {
+      const item = quoteItems[itemKey];
+      if (!item?.basePrices || item.basePrices.length <= 1) {
+        alert('No quantity breaks available for this item.');
+        return;
+      }
+
+      const modal = document.getElementById('qtyModal');
+      const modalBody = document.getElementById('qtyModalBody');
+      
+      let tableHtml = `
+        <div class="qty-modal-item-name">${item.name}</div>
+        <table class="qty-breakdown-table">
+          <thead>
+            <tr>
+              <th>Quantity Range</th>
+              <th>Unit Price</th>
+              <th>Setup Fee</th>
+              <th>Total (min qty)</th>
+              <th>Per Piece</th>
+              <th>CS Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      // Sort pricing tiers by minimum quantity
+      const tiers = [...item.basePrices].sort((a,b) => a.min - b.min);
+      
+      tiers.forEach(tier => {
+        const unitPrice = tier.price;
+        const setup = tier.setup || 0;
+        const minQty = tier.min;
+        const maxQty = tier.max;
+        const totalForMin = (unitPrice * minQty) + setup;
+        const csPrice = unitPrice * 0.6; // CS typically gets 40% discount
+        
+        tableHtml += `
+          <tr>
+            <td class="qty-col">${minQty.toLocaleString()}${maxQty !== 9999 ? ` - ${maxQty.toLocaleString()}` : '+'}</td>
+            <td class="price-col">${fmt.format(unitPrice)}</td>
+            <td class="price-col">${setup > 0 ? fmt.format(setup) : 'Included'}</td>
+            <td class="total-col">${fmt.format(totalForMin)}</td>
+            <td class="price-col">${fmt.format(unitPrice)}</td>
+            <td class="price-col cs-highlight">${fmt.format(csPrice)}</td>
+          </tr>
+        `;
+      });
+      
+      tableHtml += `
+          </tbody>
+        </table>
+        <div class="qty-modal-footer">
+          📊 <strong>CS Pricing:</strong> Customer service representatives see discounted pricing (typically 40% off unit price) to help with negotiations.<br>
+          💡 <strong>Tip:</strong> Larger quantities offer better per-unit pricing and may include setup fees.
+        </div>
+      `;
+      
+      modalBody.innerHTML = tableHtml;
+      modal.classList.add('show');
+    }
+
+    // Modal functionality handled by inline onclick and global click handler
+  </script>
+
+  <!-- Quantity Break Modal -->
+  <div id="qtyModal" class="qty-modal">
+    <div class="qty-modal-content">
+      <div class="qty-modal-header">
+        <h3 class="qty-modal-title">Quantity Pricing Breakdown</h3>
+        <button class="qty-modal-close" id="qtyModalClose" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="qtyModalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // Modal close functions
+    function closeModal() {
+      const modal = document.getElementById('qtyModal');
+      modal.classList.remove('show');
+    }
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('qtyModal');
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    // Also allow ESC key to close modal
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+
+</body>
+</html>

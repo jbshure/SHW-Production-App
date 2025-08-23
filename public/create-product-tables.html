@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Product Tables in Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Product Options Tables in Supabase</h1>
+    
+    <div id="status"></div>
+    
+    <button onclick="createTables()">Create Tables</button>
+    <button onclick="checkTables()">Check Tables</button>
+    
+    <div id="results"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-config.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `status ${type}`;
+            msgDiv.textContent = message;
+            statusDiv.appendChild(msgDiv);
+        }
+        
+        async function createTables() {
+            const { createClient } = window.supabase;
+            const supabaseClient = createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.anonKey
+            );
+            
+            log('Starting table creation...', 'info');
+            
+            // Check if tables already exist
+            const { data: existingTables } = await supabaseClient
+                .from('product_option_groups')
+                .select('id')
+                .limit(1);
+            
+            if (existingTables !== null) {
+                log('Tables might already exist. Checking structure...', 'info');
+            }
+            
+            // Add columns to products table if they don't exist
+            try {
+                // First check if columns exist by trying to query them
+                const { data: testProduct, error: testError } = await supabaseClient
+                    .from('products')
+                    .select('product_options, base_price, setup_fee, pricing_configuration')
+                    .limit(1);
+                
+                if (testError && testError.message.includes('column')) {
+                    log('Adding new columns to products table...', 'info');
+                    
+                    // Note: Supabase doesn't allow direct ALTER TABLE through the client
+                    // These columns need to be added via Supabase Dashboard
+                    log('Please add these columns to the products table in Supabase Dashboard:', 'error');
+                    log('1. product_options (JSONB)', 'info');
+                    log('2. base_price (NUMERIC)', 'info');
+                    log('3. setup_fee (NUMERIC)', 'info');
+                    log('4. pricing_configuration (JSONB)', 'info');
+                } else {
+                    log('Products table already has the required columns', 'success');
+                }
+            } catch (err) {
+                log('Error checking products table: ' + err.message, 'error');
+            }
+            
+            // Create tables using raw SQL (Note: This needs to be done in Supabase SQL Editor)
+            const sqlScript = `
+-- Product Options Groups (Size, Color, Wall Type, etc.)
+CREATE TABLE IF NOT EXISTS product_option_groups (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    required BOOLEAN DEFAULT false,
+    option_type VARCHAR(50) DEFAULT 'select',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Product Option Values (100ml, 240ml, Single Wall, etc.)
+CREATE TABLE IF NOT EXISTS product_option_values (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    option_group_id UUID REFERENCES product_option_groups(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    sku_suffix VARCHAR(50),
+    price_adjustment DECIMAL(10,2) DEFAULT 0,
+    weight_adjustment DECIMAL(10,3) DEFAULT 0,
+    is_default BOOLEAN DEFAULT false,
+    display_order INTEGER DEFAULT 0,
+    stock_quantity INTEGER,
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Product Variants (combinations of options with specific pricing)
+CREATE TABLE IF NOT EXISTS product_variants (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+    variant_sku VARCHAR(100) UNIQUE,
+    variant_name VARCHAR(255),
+    base_price DECIMAL(10,2),
+    compare_at_price DECIMAL(10,2),
+    cost DECIMAL(10,2),
+    weight DECIMAL(10,3),
+    stock_quantity INTEGER DEFAULT 0,
+    options JSONB,
+    image_url TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Volume/Quantity Pricing Tiers
+CREATE TABLE IF NOT EXISTS product_pricing_tiers (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+    variant_id UUID REFERENCES product_variants(id) ON DELETE CASCADE,
+    min_quantity INTEGER NOT NULL,
+    max_quantity INTEGER,
+    unit_price DECIMAL(10,2) NOT NULL,
+    setup_fee DECIMAL(10,2) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_option_groups_product ON product_option_groups(product_id);
+CREATE INDEX IF NOT EXISTS idx_option_values_group ON product_option_values(option_group_id);
+CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_tiers_product ON product_pricing_tiers(product_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_tiers_variant ON product_pricing_tiers(variant_id);
+
+-- Add columns to products table if they don't exist
+ALTER TABLE products ADD COLUMN IF NOT EXISTS product_options JSONB;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS base_price DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS setup_fee DECIMAL(10,2);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS pricing_configuration JSONB;
+            `;
+            
+            document.getElementById('results').innerHTML = `
+                <h2>SQL Script to Run in Supabase SQL Editor:</h2>
+                <p>Copy and paste this script into your Supabase SQL Editor:</p>
+                <pre>${sqlScript}</pre>
+                <p>Steps:</p>
+                <ol>
+                    <li>Go to your Supabase Dashboard</li>
+                    <li>Navigate to SQL Editor</li>
+                    <li>Create a new query</li>
+                    <li>Paste the above SQL script</li>
+                    <li>Click "Run" to execute</li>
+                </ol>
+            `;
+            
+            log('SQL script generated. Please run it in Supabase SQL Editor.', 'info');
+        }
+        
+        async function checkTables() {
+            const { createClient } = window.supabase;
+            const supabaseClient = createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.anonKey
+            );
+            
+            log('Checking tables...', 'info');
+            
+            // Check each table
+            const tables = [
+                'product_option_groups',
+                'product_option_values',
+                'product_variants',
+                'product_pricing_tiers'
+            ];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`Table ${table}: NOT FOUND`, 'error');
+                    } else {
+                        log(`Table ${table}: EXISTS`, 'success');
+                    }
+                } catch (err) {
+                    log(`Table ${table}: ERROR - ${err.message}`, 'error');
+                }
+            }
+            
+            // Check products table columns
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('product_options, base_price, setup_fee, pricing_configuration')
+                    .limit(1);
+                
+                if (error && error.message.includes('column')) {
+                    log('Products table missing new columns', 'error');
+                } else {
+                    log('Products table has all required columns', 'success');
+                }
+            } catch (err) {
+                log(`Products table check: ERROR - ${err.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

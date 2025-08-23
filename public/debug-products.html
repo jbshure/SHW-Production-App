@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Product Catalog</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Product Catalog Debug Console</h1>
+    <div id="debug-output"></div>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Config -->
+    <script src="/supabase-config.js"></script>
+    
+    <script>
+        const output = document.getElementById('debug-output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        async function debugProductCatalog() {
+            log('<div class="section"><h2>1. Checking Environment</h2></div>');
+            
+            // Check Supabase library
+            if (typeof window.supabase !== 'undefined') {
+                log('✅ Supabase library loaded', 'success');
+            } else {
+                log('❌ Supabase library NOT loaded', 'error');
+                return;
+            }
+            
+            // Check config
+            if (window.SUPABASE_CONFIG) {
+                log('✅ SUPABASE_CONFIG found', 'success');
+                log(`URL: ${window.SUPABASE_CONFIG.url}`, 'info');
+                log(`Key: ${window.SUPABASE_CONFIG.anonKey?.substring(0, 20)}...`, 'info');
+            } else {
+                log('❌ SUPABASE_CONFIG NOT found', 'error');
+                return;
+            }
+            
+            log('<div class="section"><h2>2. Initializing Supabase Client</h2></div>');
+            
+            try {
+                const { createClient } = window.supabase;
+                const supabaseClient = createClient(
+                    window.SUPABASE_CONFIG.url,
+                    window.SUPABASE_CONFIG.anonKey
+                );
+                log('✅ Supabase client created', 'success');
+                
+                log('<div class="section"><h2>3. Loading Products</h2></div>');
+                
+                const { data: products, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .limit(10);
+                
+                if (error) {
+                    log(`❌ Error loading products: ${error.message}`, 'error');
+                    return;
+                }
+                
+                log(`✅ Loaded ${products.length} products`, 'success');
+                
+                log('<div class="section"><h2>4. Product Data Structure</h2></div>');
+                
+                if (products.length > 0) {
+                    log('First product:', 'info');
+                    log(`<pre>${JSON.stringify(products[0], null, 2)}</pre>`, 'info');
+                    
+                    // Check specific fields
+                    log('<div class="section"><h2>5. Field Analysis</h2></div>');
+                    const firstProduct = products[0];
+                    log(`ID: ${firstProduct.id}`, 'info');
+                    log(`Name: ${firstProduct.name}`, 'info');
+                    log(`Status: ${firstProduct.status || 'NULL/undefined'}`, 'info');
+                    log(`Category ID: ${firstProduct.category_id || 'NULL'}`, 'info');
+                    log(`Images: ${Array.isArray(firstProduct.images) ? firstProduct.images.length + ' images' : 'No images'}`, 'info');
+                    
+                    if (firstProduct.images && firstProduct.images.length > 0) {
+                        log(`First image URL: ${firstProduct.images[0]}`, 'info');
+                    }
+                }
+                
+                log('<div class="section"><h2>6. Loading Categories</h2></div>');
+                
+                const { data: categories, error: catError } = await supabaseClient
+                    .from('categories')
+                    .select('*');
+                
+                if (catError) {
+                    log(`❌ Error loading categories: ${catError.message}`, 'error');
+                } else {
+                    log(`✅ Loaded ${categories.length} categories`, 'success');
+                    log(`Categories: ${categories.map(c => c.name).join(', ')}`, 'info');
+                }
+                
+                log('<div class="section"><h2>7. Testing Product Filter Logic</h2></div>');
+                
+                // Test filter logic
+                const filters = {
+                    search: "",
+                    categories: [],
+                    suppliers: [],
+                    status: [] // Empty means show all
+                };
+                
+                let filteredCount = 0;
+                for (let product of products) {
+                    let shouldShow = true;
+                    
+                    // Check status filter
+                    if (filters.status.length > 0) {
+                        const productStatus = product.status || "Active";
+                        if (!filters.status.includes(productStatus)) {
+                            shouldShow = false;
+                            log(`Product "${product.name}" filtered out - status: ${productStatus}`, 'info');
+                        }
+                    }
+                    
+                    if (shouldShow) filteredCount++;
+                }
+                
+                log(`✅ ${filteredCount} products would be shown with current filters`, 'success');
+                
+                log('<div class="section"><h2>8. Testing product-catalog.js Functions</h2></div>');
+                
+                // Load the actual product catalog script
+                const script = document.createElement('script');
+                script.src = '/product-catalog.js?v=' + Date.now();
+                script.onload = function() {
+                    log('✅ product-catalog.js loaded', 'success');
+                    
+                    // Check if functions exist
+                    if (typeof window.initializeSupabase === 'function') {
+                        log('✅ initializeSupabase function exists', 'success');
+                    }
+                    if (typeof window.renderProducts === 'function') {
+                        log('✅ renderProducts function exists', 'success');
+                    }
+                };
+                script.onerror = function() {
+                    log('❌ Failed to load product-catalog.js', 'error');
+                };
+                document.head.appendChild(script);
+                
+            } catch (error) {
+                log(`❌ Unexpected error: ${error.message}`, 'error');
+                log(`<pre>${error.stack}</pre>`, 'error');
+            }
+        }
+        
+        // Run debug
+        debugProductCatalog();
+    </script>
+</body>
+</html>

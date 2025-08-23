@@ -301,6 +301,42 @@ ${signatureNote}
 
     await trelloService.addCommentToCard(quoteData.trelloCardId, trelloComment);
 
+    // Generate and attach approved quote PDF to Trello if accepted
+    if (isAccepted) {
+      try {
+        const pdfService = require('../services/pdfService');
+        const pdfInstance = new pdfService();
+        
+        // Prepare quote data for PDF generation
+        const pdfQuoteData = {
+          ...quoteData.quoteData,
+          selectedItems: selectedItems,
+          pricing: pricing,
+          approvedBy: customerName,
+          approvalDate: new Date().toLocaleDateString(),
+          signature: signature ? true : false
+        };
+        
+        // Generate PDF buffer
+        const pdfBuffer = await pdfInstance.generateQuotePDF(pdfQuoteData);
+        
+        // Attach to Trello card
+        await trelloService.attachFileToCard(quoteData.trelloCardId, {
+          file: pdfBuffer,
+          name: `Approved_Quote_${quoteData.quoteData.quoteNumber}_${Date.now()}.pdf`
+        });
+        
+        await trelloService.addCommentToCard(quoteData.trelloCardId, '📄 ✅ Approved quote PDF attached');
+        
+        // Clean up browser instance
+        await pdfInstance.closeBrowser();
+      } catch (pdfError) {
+        console.error('Error attaching PDF to Trello:', pdfError);
+        // Don't fail the entire request if PDF attachment fails
+        await trelloService.addCommentToCard(quoteData.trelloCardId, '⚠️ Could not attach PDF automatically');
+      }
+    }
+
     // Handle payment delegation if quote was accepted
     if (isAccepted && delegatePayment && paymentEmail) {
       try {

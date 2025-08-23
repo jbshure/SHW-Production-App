@@ -70,29 +70,60 @@ class PDFService {
   }
 
   generateQuoteHTML(quoteData, logoBase64) {
-    const itemsHTML = quoteData.quoteItems ? quoteData.quoteItems.map((item, index) => `
+    // Use selectedItems if available (for approved quotes), otherwise use quoteItems
+    const items = quoteData.selectedItems || quoteData.quoteItems || [];
+    const itemsHTML = items.map((item, index) => {
+      // Handle both formats (selectedItems has different structure from customer response)
+      const itemData = quoteData.selectedItems ? {
+        code: item.item || '-',
+        name: item.item || 'Item',
+        note: item.description || '-',
+        quantity: item.quantity || 1,
+        caseQty: null,
+        shwPrice: 0,
+        price: item.unitPrice || 0,
+        leadTime: '5-7 days',
+        setUps: '-',
+        total: item.lineTotal || (item.quantity * item.unitPrice)
+      } : item;
+      
+      return `
       <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#faf8f5'};">
-        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #333;">${item.code || '-'}</td>
-        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #333;">${item.name}</td>
-        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #666;">${item.note || '-'}</td>
+        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #333;">${itemData.code || '-'}</td>
+        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #333;">${itemData.name}</td>
+        <td style="padding: 10px 8px; border: none; font-size: 12px; color: #666;">${itemData.note || '-'}</td>
         <td style="padding: 10px 8px; border: none; text-align: center; font-size: 12px; color: #333;">
-          <div>${item.quantity || 1}</div>
-          <div style="font-size: 10px; color: #888; margin-top: 2px;">${item.caseQty ? `(${item.caseQty}/cs)` : ''}</div>
+          <div>${itemData.quantity || 1}</div>
+          <div style="font-size: 10px; color: #888; margin-top: 2px;">${itemData.caseQty ? `(${itemData.caseQty}/cs)` : ''}</div>
         </td>
-        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333;">$${(item.shwPrice || 0).toFixed(2)}</td>
-        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333;">$${item.price.toFixed(2)}</td>
-        <td style="padding: 10px 8px; border: none; text-align: center; font-size: 12px; color: #333;">${item.leadTime || '-'}</td>
-        <td style="padding: 10px 8px; border: none; text-align: center; font-size: 12px; color: #333;">${item.setUps || '-'}</td>
-        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333; font-weight: 500;">$${(item.price * (item.quantity || 1)).toFixed(2)}</td>
+        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333;">$${(itemData.shwPrice || 0).toFixed(2)}</td>
+        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333;">$${(itemData.price || 0).toFixed(2)}</td>
+        <td style="padding: 10px 8px; border: none; text-align: center; font-size: 12px; color: #333;">${itemData.leadTime || '-'}</td>
+        <td style="padding: 10px 8px; border: none; text-align: center; font-size: 12px; color: #333;">${itemData.setUps || '-'}</td>
+        <td style="padding: 10px 8px; border: none; text-align: right; font-size: 12px; color: #333; font-weight: 500;">$${(itemData.total || (itemData.price * (itemData.quantity || 1))).toFixed(2)}</td>
       </tr>
-    `).join('') : '';
+    `}).join('');
 
-    const totalQuantity = quoteData.quoteItems ? 
-      quoteData.quoteItems.reduce((sum, item) => sum + (item.quantity || 1), 0) : 0;
-    const subtotal = quoteData.quoteItems ? 
-      quoteData.quoteItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0) : 0;
-    const tax = subtotal * 0.0875; // 8.75% tax
-    const total = quoteData.totalAmount || (subtotal + tax);
+    // Use pricing from approved quote if available
+    let totalQuantity, subtotal, tax, total;
+    
+    if (quoteData.pricing) {
+      // Use the pricing data from approved quote
+      totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      subtotal = quoteData.pricing.subtotal || 0;
+      tax = quoteData.pricing.tax || 0;
+      total = quoteData.pricing.total || 0;
+    } else {
+      // Calculate from items
+      totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      subtotal = items.reduce((sum, item) => {
+        const price = item.price || item.unitPrice || 0;
+        const qty = item.quantity || 1;
+        return sum + (price * qty);
+      }, 0);
+      tax = subtotal * 0.0875; // 8.75% tax
+      total = quoteData.totalAmount || (subtotal + tax);
+    }
 
     return `
 <!DOCTYPE html>
@@ -520,10 +551,21 @@ class PDFService {
       </ul>
     </div>
 
-    <!-- Signature Section -->
+    <!-- Signature/Approval Section -->
     <div class="signature-section">
-      <div class="signature-text">Authorized Signature</div>
-      <div class="signature-line"></div>
+      ${quoteData.approvedBy ? `
+        <div style="background: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <h3 style="color: #28a745; margin: 0 0 10px 0; font-size: 16px;">✅ QUOTE APPROVED</h3>
+          <div style="color: #155724; font-size: 14px;">
+            <p><strong>Approved By:</strong> ${quoteData.approvedBy}</p>
+            <p><strong>Approval Date:</strong> ${quoteData.approvalDate}</p>
+            ${quoteData.signature ? '<p><strong>Digital Signature:</strong> ✓ Captured</p>' : ''}
+          </div>
+        </div>
+      ` : `
+        <div class="signature-text">Authorized Signature</div>
+        <div class="signature-line"></div>
+      `}
     </div>
 
     <!-- Footer -->

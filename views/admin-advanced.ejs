@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Art Proof Admin Dashboard – SHUREPRINT</title>
+
+  <!-- Brand typography -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style nonce="<%= locals.cspNonce %>">
+    :root{
+      /* Shureprint admin theme */
+      --ink:#111111;
+      --text:#222222;
+      --muted:#6b6b6b;
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --cream:#FFF9F0;       /* soft section bg */
+      --neon:#E3FF33;        /* accent */
+      --stroke:#e9e9e9;
+      --soft:#f7f7f7;
+      --radius:14px;
+      --radius-sm:10px;
+      --shadow:0 8px 28px rgba(0,0,0,.08);
+    }
+
+    /* reset */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      background:var(--bg);
+      color:var(--text);
+      font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      min-height:100%;
+    }
+
+    /* layout */
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+
+    header{
+      background:var(--cream);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:18px 22px;
+      margin-bottom:24px;
+      box-shadow:var(--shadow);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    }
+    h1{color:var(--ink);font-size:28px;line-height:1.2;font-weight:800}
+
+    /* Admin navigation */
+    .admin-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .admin-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .15s ease;
+    }
+    .admin-link:hover {
+      color: var(--ink);
+      background: var(--soft);
+      text-decoration: none;
+    }
+
+
+    /* view toggle + sync status */
+    .view-toggle{display:flex;gap:6px;background:var(--soft);border:1px solid var(--stroke);border-radius:12px;padding:4px}
+    .toggle-btn{
+      display:flex;align-items:center;gap:6px;padding:10px 14px;border:0;background:transparent;
+      color:var(--muted);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;
+    }
+    .toggle-btn:hover{color:var(--ink)}
+    .toggle-btn.active{background:#fff;color:#000;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+    .sync-status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+    .sync-indicator{width:10px;height:10px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+    @keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+
+    /* stats / sections */
+    .stat-card, .status-column, .grid-view{
+      background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);
+    }
+    
+    /* Grid table styles */
+    .grid-table-container { width: 100%; background: #fff; padding: 20px; border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+    .grid-table-container h3 { margin-bottom: 16px; font-size: 20px; color: var(--ink); }
+    
+    /* Grid controls */
+    .grid-controls { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .search-box { flex: 1; min-width: 250px; position: relative; }
+    .search-input { width: 100%; padding: 10px 12px 10px 36px; border: 1.5px solid var(--stroke); border-radius: 10px; font-size: 14px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    
+    /* Status filters */
+    .status-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn { padding: 8px 14px; border: 1.5px solid var(--stroke); background: #fff; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+    .filter-btn:hover { background: var(--soft); border-color: var(--muted); }
+    .filter-btn.active { background: var(--neon); border-color: var(--neon); color: #000; }
+    .filter-count { opacity: 0.7; margin-left: 4px; }
+    
+    /* Enhanced table */
+    .grid-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .grid-table thead tr { border-bottom: 2px solid #e9e9e9; }
+    .grid-table th { text-align: left; padding: 8px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; user-select: none; position: relative; }
+    .grid-table th:hover { color: var(--ink); }
+    .sort-indicator { margin-left: 6px; font-size: 11px; position: absolute; }
+    .grid-table tbody tr { border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.15s; }
+    .grid-table tbody tr:hover { background-color: var(--cream); }
+    .grid-table td { padding: 8px; font-size: 13px; }
+    .grid-table .project-name { font-weight: 600; color: var(--ink); width: 25%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grid-table .client-name { width: 12%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grid-table .list-name { width: 10%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grid-table .recipients-cell { width: 15%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .grid-table .status-badge-cell { white-space: nowrap; }
+    .grid-table .actions-cell { width: 8%; text-align: center; }
+    .grid-table .customer-review-cell { width: 10%; text-align: center; }
+    .grid-table th:nth-child(1) { width: 25%; } /* Project Name */
+    .grid-table th:nth-child(2) { width: 12%; } /* Client */
+    .grid-table th:nth-child(3) { width: 10%; } /* Status */
+    .grid-table th:nth-child(4) { width: 10%; } /* List */
+    .grid-table th:nth-child(5) { width: 15%; } /* Recipients */
+    .grid-table th:nth-child(6) { width: 10%; } /* Last Activity */
+    .grid-table th:nth-child(7) { width: 8%; }  /* Due Date */
+    .grid-table th:nth-child(8) { width: 5%; }  /* Version */
+    .grid-table th:nth-child(9) { width: 10%; } /* Customer Review */
+    .grid-table th:nth-child(10) { width: 8%; } /* Actions */
+    
+    /* Status badges */
+    .status-badge-cell { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
+    .status-sent { background: #e3f2fd; color: #1976d2; }
+    .status-revision { background: #fff3e0; color: #f57c00; }
+    .status-expired { background: #ffebee; color: #c62828; }
+    .status-extended { background: #f3e5f5; color: #7b1fa2; }
+    .status-approved { background: #e8f5e9; color: #2e7d32; }
+    .status-pending { background: #fffde7; color: #f9a825; }
+    
+    /* Recipients cell */
+    .recipients-cell { position: relative; }
+    .recipients-preview { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recipients-full { display: none; position: absolute; background: #fff; border: 1px solid var(--stroke); border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 200px; }
+    .recipients-cell:hover .recipients-full { display: block; }
+    
+    /* Labels */
+    .label-tag { display: inline-block; padding: 2px 8px; margin: 2px; background: #f7f7f7; border-radius: 4px; font-size: 12px; }
+    .table-scroll { overflow-x: auto; }
+    .action-btn + .action-btn { margin-left: 8px; }
+    
+    /* Modal styles */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; }
+    .modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; border-radius: 16px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .modal-header { padding: 24px; border-bottom: 1px solid var(--stroke); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 24px; font-weight: 800; color: var(--ink); }
+    .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--muted); }
+    .modal-body { padding: 24px; }
+    .modal-section { margin-bottom: 24px; }
+    .modal-section h4 { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+    .modal-actions { padding: 24px; border-top: 1px solid var(--stroke); display: flex; gap: 12px; justify-content: flex-end; }
+    
+    /* Modal form elements */
+    .modal-form-group { margin-bottom: 16px; }
+    .modal-form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .modal-input, .modal-textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--stroke); border-radius: 8px; font-size: 14px; }
+    .modal-textarea { resize: vertical; min-height: 80px; }
+    .modal-input:focus, .modal-textarea:focus { outline: none; border-color: var(--neon); box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent); }
+    
+    /* File upload */
+    .file-upload-area { border: 2px dashed var(--stroke); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .file-upload-area:hover { border-color: var(--neon); background: color-mix(in oklab, var(--neon) 10%, transparent); }
+    .file-upload-area.dragover { border-color: var(--neon); background: color-mix(in oklab, var(--neon) 15%, transparent); }
+    .file-list { margin-top: 12px; }
+    .file-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--cream); border-radius: 6px; margin-bottom: 8px; }
+    .file-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+    .file-remove:hover { color: #c62828; }
+    
+    /* Recipient tags */
+    .recipient-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .recipient-tag { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--soft); border-radius: 16px; font-size: 13px; }
+    .recipient-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; }
+    .recipient-remove:hover { color: #c62828; }
+    .add-recipient { padding: 4px 10px; background: var(--neon); border: none; border-radius: 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    
+    /* Tabs */
+    .modal-tabs { display: flex; border-bottom: 1px solid var(--stroke); margin-bottom: 20px; }
+    .modal-tab { padding: 12px 20px; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+    .modal-tab.active { color: var(--ink); border-bottom-color: var(--neon); }
+    .modal-tab-content { display: none; }
+    .modal-tab-content.active { display: block; }
+
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+    .stat-card{padding:18px}
+    .stat-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .stat-value{font-size:28px;font-weight:800;color:var(--ink)}
+
+    .status-columns{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px}
+    .status-column{padding:16px}
+    .status-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--stroke)}
+    .status-title{font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--ink)}
+    .status-count{background:var(--soft);border:1px solid var(--stroke);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink)}
+
+    .proof-card{
+      background:#fff;border:1px solid var(--stroke);border-radius:12px;padding:14px;margin-bottom:12px;position:relative;transition:.2s;cursor:pointer
+    }
+    .proof-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.08);border-color:var(--neon)}
+    .proof-title{font-weight:800;color:var(--ink);margin-bottom:6px}
+    .proof-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .status-badge{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:#9AA0A6}
+    .status-sent{background:#7A7A7A}
+    .status-approved{background:#5C5C5C}
+    .status-revision{background:#666}
+    .status-expired{background:#4A4A4A}
+    .status-extended{background:#8A8A8A}
+
+    .countdown{
+      display:inline-block;padding:4px 8px;background:#F5F5F5;color:#222;border:1px solid #E3E3E3;border-radius:8px;
+      font-size:11px;font-weight:800
+    }
+
+    /* buttons */
+    .btn, .action-btn, .grid-action-btn, .btn-cancel, .btn-send, .filter-trigger, .apply-filters, .clear-filters{
+      border:0;border-radius:12px;cursor:pointer;transition:.15s;font-weight:800
+    }
+    .btn-primary, .btn-send{background:var(--neon);color:#000;padding:10px 18px}
+    .btn-primary:hover, .btn-send:hover{filter:brightness(.96)}
+    .btn-secondary{background:#111;color:#fff;padding:10px 18px}
+    .btn-secondary:hover{filter:brightness(1.08)}
+    .grid-action-btn{padding:8px 12px;background:#fff;border:1px solid var(--stroke);color:var(--ink);border-radius:10px}
+    .grid-action-btn:hover{border-color:var(--neon);box-shadow:0 0 0 3px color-mix(in oklab,var(--neon) 28%, transparent)}
+    .action-btn{padding:8px 12px}
+    .grid-open-btn{
+      background:var(--neon) !important;
+      color:#000 !important;
+      padding:4px 8px !important;
+      border:none !important;
+      border-radius:6px !important;
+      font-weight:700 !important;
+      font-size:11px !important;
+      cursor:pointer !important;
+      display:inline-block !important;
+      min-width:50px !important;
+    }
+    .grid-open-btn:hover{
+      filter:brightness(0.96) !important;
+    }
+    .btn-cancel{padding:10px 18px;background:var(--soft);border:1px solid var(--stroke);color:var(--ink)}
+
+    /* Notifications */
+    .loading{ display:none;text-align:center;padding:20px;color:var(--muted) }
+    .loading.show{ display:block }
+    .result{ margin-top:12px;padding:12px;border-radius:10px;display:none;border:1px solid transparent }
+    .result.success{ background:#e8f7ee;border-color:#cdeeda;color:#106b33 }
+    .result.error{ background:#fdecee;border-color:#f6c9cf;color:#7a1121 }
+    .result.info{ background:#eaf4fb;border-color:#cbe6f7;color:#0c4f70 }
+
+    /* grid view */
+    .grid-view{display:none;overflow:hidden}
+    .grid-view.active{display:block}
+
+    /* helpers */
+    .hidden{display:none}
+
+    @media (max-width:768px){
+      .container{padding:16px}
+      header{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Art Proof Admin Dashboard</h1>
+      <div class="admin-nav">
+        <a href="/proof/admin" class="admin-link">← Sales Rep Dashboard</a>
+        <div class="view-toggle">
+          <button class="toggle-btn active" id="kanbanBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+            </svg>
+            Kanban
+          </button>
+          <button class="toggle-btn" id="gridBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            Grid
+          </button>
+        </div>
+        <div class="sync-status">
+          <div class="sync-indicator"></div>
+          <span>Live Sync</span>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- Status Messages -->
+    <div class="loading" id="loadingDiv">
+      <p>Loading Trello data...</p>
+    </div>
+    <div id="result" class="result"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid" style="display:none">
+      <div class="stat-card"><div class="stat-label">Total Active</div><div class="stat-value" id="statTotal">0</div></div>
+      <div class="stat-card"><div class="stat-label">Proof Sent</div><div class="stat-value" id="statSent">0</div></div>
+      <div class="stat-card"><div class="stat-label">Awaiting Response</div><div class="stat-value" id="statPending">0</div></div>
+      <div class="stat-card"><div class="stat-label">Needs Revision</div><div class="stat-value" id="statRevision">0</div></div>
+      <div class="stat-card"><div class="stat-label">Expired</div><div class="stat-value" id="statExpired">0</div></div>
+    </div>
+
+    <!-- Kanban View -->
+    <div class="status-columns kanban-view" id="kanbanView" style="display:none">
+      <div class="status-column">
+        <div class="status-header"><span class="status-title">PROOF SENT</span><span class="status-count" id="countSent">0</span></div>
+        <div id="columnSent"></div>
+      </div>
+
+      <div class="status-column">
+        <div class="status-header"><span class="status-title">REVISION NEEDED</span><span class="status-count" id="countRevision">0</span></div>
+        <div id="columnRevision"></div>
+      </div>
+
+      <div class="status-column">
+        <div class="status-header"><span class="status-title">EXPIRED</span><span class="status-count" id="countExpired">0</span></div>
+        <div id="columnExpired"></div>
+      </div>
+
+      <div class="status-column">
+        <div class="status-header"><span class="status-title">EXTENDED</span><span class="status-count" id="countExtended">0</span></div>
+        <div id="columnExtended"></div>
+      </div>
+
+      <div class="status-column">
+        <div class="status-header"><span class="status-title">APPROVED</span><span class="status-count" id="countApproved">0</span></div>
+        <div id="columnApproved"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Structure -->
+  <div id="cardModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Project Details</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="details">Details</button>
+        <button class="modal-tab" data-tab="artwork">Artwork</button>
+        <button class="modal-tab" data-tab="recipients">Recipients</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Details Tab -->
+        <div class="modal-tab-content active" id="detailsTab">
+          <div id="modalDetailsContent"></div>
+        </div>
+        
+        <!-- Artwork Tab -->
+        <div class="modal-tab-content" id="artworkTab">
+          <div class="modal-section">
+            <h4>Upload New Artwork</h4>
+            <div class="file-upload-area" id="fileUploadArea">
+              <p>📁 Drag & drop files here or click to browse</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">Supports PNG, JPG, PDF • Max 10MB per file</p>
+              <input type="file" id="fileInput" multiple accept=".png,.jpg,.jpeg,.pdf" style="display: none;">
+            </div>
+            <div class="file-list" id="fileList"></div>
+          </div>
+          
+          <div class="modal-section">
+            <h4>Current Attachments</h4>
+            <div id="existingAttachments">Loading...</div>
+          </div>
+        </div>
+        
+        <!-- Recipients Tab -->
+        <div class="modal-tab-content" id="recipientsTab">
+          <div class="modal-section">
+            <div class="modal-form-group">
+              <label for="recipientInput">Add Recipients</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="email" id="recipientInput" class="modal-input" placeholder="email@example.com" style="flex: 1;">
+                <button type="button" class="add-recipient" id="addRecipientBtn">Add</button>
+              </div>
+            </div>
+            
+            <div class="modal-form-group">
+              <label>Current Recipients</label>
+              <div class="recipient-tags" id="recipientTags"></div>
+            </div>
+            
+            <div class="modal-form-group">
+              <label for="projectDescription">Project Description</label>
+              <textarea id="projectDescription" class="modal-textarea" placeholder="Enter project details, special instructions, etc..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalSaveChanges">Save Changes</button>
+        <button class="btn btn-primary" id="modalGenerateProof">Generate Proof</button>
+        <button class="btn btn-secondary" id="modalViewTrello">View in Trello</button>
+      </div>
+    </div>
+  </div>
+
+  <script nonce="<%= locals.cspNonce %>">
+    /* ---------- Global Variables ---------- */
+    let currentView = 'kanban';
+    let allCards = [];
+    let allProofs = [];
+
+    /* ---------- Helpers ---------- */
+    const escapeHTML = (s='') =>
+      String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    async function fetchJSON(url, opts = {}) {
+      // Ensure we're sending JSON accept header
+      const defaultHeaders = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      
+      const options = {
+        ...opts,
+        headers: {
+          ...defaultHeaders,
+          ...(opts.headers || {})
+        }
+      };
+      
+      const res = await fetch(url, options);
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+      if (!res.ok) {
+        const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.className = `result ${type}`;
+      resultDiv.style.display = 'block';
+      
+      const duration = type === 'error' ? 10000 : (type === 'success' ? 8000 : 5000);
+      setTimeout(() => { resultDiv.style.display = 'none'; }, duration);
+    }
+
+    function setLoading(loading) {
+      const loadingDiv = document.getElementById('loadingDiv');
+      loadingDiv.classList.toggle('show', loading);
+    }
+
+    /* ---------- Data Loading ---------- */
+    window.boardData = null;
+
+    function generateCustomerReviewLink(card) {
+      // Check if there are any proofs for this card
+      const hasProofSent = card.labels && card.labels.some(l => 
+        l.name && (l.name.toUpperCase().includes('PROOF SENT') || l.name.toUpperCase().includes('PROOF'))
+      );
+      
+      if (hasProofSent) {
+        // This would be the actual customer review link - for now showing placeholder
+        return '<a href="#" class="customer-link" data-card-id="' + card.id + '" style="color: var(--neon); text-decoration: none;">View Proof</a>';
+      } else {
+        return '<span class="no-proof" style="color: var(--muted); font-style: italic;">No proof sent</span>';
+      }
+    }
+
+    async function loadBoardMetadata() {
+      try {
+        const data = await fetchJSON('/api/board/metadata', {
+          headers: { 'x-api-key': apiKey }
+        });
+        window.boardData = data.board;
+        console.log('Board metadata loaded:', window.boardData);
+      } catch (error) {
+        console.error('Error loading board metadata:', error);
+      }
+    }
+
+    async function loadTrelloData() {
+      setLoading(true);
+      
+      try {
+        await loadBoardMetadata();
+        const cardsResponse = await fetchJSON('/api/board/cards');
+
+        if (cardsResponse.success) {
+          allCards = cardsResponse.cards || [];
+          generateMockProofs(); // Convert cards to proof data
+          updateStats();
+          populateKanbanView();
+          showDashboard();
+          showResult(`✅ Loaded ${allCards.length} cards from Trello board.`, 'success');
+        } else {
+          showResult(`❌ Failed to load cards: ${cardsResponse.error || 'Unknown error'}`, 'error');
+        }
+
+      } catch (error) {
+        console.error('Error loading Trello data:', error);
+        showResult(`❌ Error: ${error.message || 'Failed to load Trello data. Please check console for details.'}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('statsGrid').style.display = 'grid';
+      document.getElementById('kanbanView').style.display = 'grid';
+    }
+
+
+    /* ---------- Mock Data Generation (for demo) ---------- */
+    function generateMockProofs() {
+      // Convert Trello cards to proof-like data for demo
+      allProofs = allCards.map(card => {
+        const hasProofSent = card.labels.some(l => l.name.toUpperCase().includes('PROOF SENT'));
+        const hasApproved = card.labels.some(l => l.name.toUpperCase().includes('APPROVED'));
+        const hasRevision = card.labels.some(l => l.name.toUpperCase().includes('REVISION'));
+        const hasExpired = card.labels.some(l => l.name.toUpperCase().includes('EXPIRED'));
+        const hasExtended = card.labels.some(l => l.name.toUpperCase().includes('EXTENDED'));
+        
+        let status = 'sent';
+        if (hasApproved) status = 'approved';
+        else if (hasRevision) status = 'revision';
+        else if (hasExpired) status = 'expired';
+        else if (hasExtended) status = 'extended';
+        
+        return {
+          id: card.id,
+          name: card.name,
+          status: status,
+          cardId: card.id,
+          listName: card.listName,
+          labels: card.labels,
+          due: card.due,
+          // Mock additional data
+          customerEmail: 'client@example.com',
+          lastActivity: 'Today',
+          version: 'v1'
+        };
+      });
+    }
+
+    /* ---------- Stats Update ---------- */
+    function updateStats() {
+      const stats = {
+        total: allProofs.length,
+        sent: allProofs.filter(p => p.status === 'sent').length,
+        pending: allProofs.filter(p => p.status === 'sent').length, // Same as sent for now
+        revision: allProofs.filter(p => p.status === 'revision').length,
+        expired: allProofs.filter(p => p.status === 'expired').length,
+        approved: allProofs.filter(p => p.status === 'approved').length,
+        extended: allProofs.filter(p => p.status === 'extended').length
+      };
+      
+      document.getElementById('statTotal').textContent = stats.total;
+      document.getElementById('statSent').textContent = stats.sent;
+      document.getElementById('statPending').textContent = stats.pending;
+      document.getElementById('statRevision').textContent = stats.revision;
+      document.getElementById('statExpired').textContent = stats.expired;
+    }
+
+    /* ---------- Kanban Population ---------- */
+    function populateKanbanView() {
+      const columns = {
+        sent: document.getElementById('columnSent'),
+        revision: document.getElementById('columnRevision'),
+        expired: document.getElementById('columnExpired'),
+        extended: document.getElementById('columnExtended'),
+        approved: document.getElementById('columnApproved')
+      };
+      
+      const counts = {
+        sent: 0, revision: 0, expired: 0, extended: 0, approved: 0
+      };
+      
+      // Clear columns
+      Object.values(columns).forEach(col => col.innerHTML = '');
+      
+      // Populate columns
+      allProofs.forEach(proof => {
+        if (columns[proof.status]) {
+          counts[proof.status]++;
+          columns[proof.status].appendChild(createProofCard(proof));
+        }
+      });
+      
+      // Update counts
+      document.getElementById('countSent').textContent = counts.sent;
+      document.getElementById('countRevision').textContent = counts.revision;
+      document.getElementById('countExpired').textContent = counts.expired;
+      document.getElementById('countExtended').textContent = counts.extended;
+      document.getElementById('countApproved').textContent = counts.approved;
+    }
+
+    function createProofCard(proof) {
+      const card = document.createElement('div');
+      card.className = 'proof-card';
+      card.style.cursor = 'pointer';
+      
+      // Add click handler to open modal (excluding action buttons)
+      card.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('action-btn')) {
+          showCardModal(proof.id);
+        }
+      });
+      
+      const statusBadge = document.createElement('div');
+      statusBadge.className = 'status-badge status-' + proof.status;
+      card.appendChild(statusBadge);
+      
+      const title = document.createElement('div');
+      title.className = 'proof-title';
+      title.textContent = proof.name;
+      card.appendChild(title);
+      
+      const meta = document.createElement('div');
+      meta.className = 'proof-meta';
+      meta.innerHTML = 'List: ' + escapeHTML(proof.listName) + '<br>' +
+                      '<span class="countdown">' + (proof.due ? new Date(proof.due).toLocaleDateString() : 'No due date') + '</span>';
+      card.appendChild(meta);
+      
+      const actions = document.createElement('div');
+      actions.className = 'proof-actions';
+      
+      // Single "Open" button for all cards
+      const openBtn = document.createElement('button');
+      openBtn.className = 'action-btn btn-primary';
+      openBtn.textContent = 'Open';
+      openBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCardModal(proof.id);
+      });
+      actions.appendChild(openBtn);
+      
+      card.appendChild(actions);
+      return card;
+    }
+
+    /* ---------- Button Handlers ---------- */
+    async function handleGenerateProof(cardId) {
+      if (!confirm('Generate and send proof for this project?')) return;
+      
+      setLoading(true);
+      try {
+        // Need to get API key for authenticated endpoints
+        const apiKey = prompt('Enter API Key (from .env API_KEY):');
+        if (!apiKey) {
+          showResult('API Key required for this action', 'error');
+          return;
+        }
+        
+        const response = await fetchJSON(`/api/projects/${cardId}/generate-proof`, {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey
+          }
+        });
+        
+        if (response.success) {
+          showResult(`✅ Proof generated successfully! Proof ID: ${response.proofId}`, 'success');
+          // Reload data to show updated status
+          setTimeout(() => loadTrelloData(), 2000);
+        } else {
+          showResult(`❌ Failed to generate proof: ${response.error}`, 'error');
+        }
+      } catch (error) {
+        showResult(`❌ Error: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    
+
+    /* ---------- Grid View ---------- */
+    let currentSort = { column: null, direction: 'asc' };
+    let filteredCards = [];
+    let activeFilter = 'all';
+    let searchTerm = '';
+    
+    function getCardStatus(card) {
+      // Determine status based on labels and list
+      if (card.labels.some(l => l.name && l.name.toUpperCase().includes('APPROVED'))) return 'approved';
+      if (card.labels.some(l => l.name && l.name.toUpperCase().includes('REVISION'))) return 'revision';
+      if (card.labels.some(l => l.name && l.name.toUpperCase().includes('EXPIRED'))) return 'expired';
+      if (card.labels.some(l => l.name && l.name.toUpperCase().includes('EXTENDED'))) return 'extended';
+      if (card.labels.some(l => l.name && l.name.toUpperCase().includes('PROOF SENT'))) return 'sent';
+      return 'pending';
+    }
+    
+    function showGridView() {
+      const container = document.getElementById('kanbanView');
+      filteredCards = [...allCards];
+      
+      // Count cards by status
+      const statusCounts = {
+        all: allCards.length,
+        sent: 0, revision: 0, expired: 0, extended: 0, approved: 0, pending: 0
+      };
+      
+      allCards.forEach(card => {
+        const status = getCardStatus(card);
+        statusCounts[status]++;
+      });
+      
+      // Build controls HTML
+      const controlsHtml = '<div class="grid-controls">' +
+        '<div class="search-box">' +
+        '<span class="search-icon">🔍</span>' +
+        '<input type="text" class="search-input" id="gridSearch" placeholder="Search projects...">' +
+        '</div>' +
+        '<div class="status-filters">' +
+        '<button class="filter-btn active" data-filter="all">All<span class="filter-count">(' + statusCounts.all + ')</span></button>' +
+        '<button class="filter-btn" data-filter="sent">Sent<span class="filter-count">(' + statusCounts.sent + ')</span></button>' +
+        '<button class="filter-btn" data-filter="revision">Revision<span class="filter-count">(' + statusCounts.revision + ')</span></button>' +
+        '<button class="filter-btn" data-filter="expired">Expired<span class="filter-count">(' + statusCounts.expired + ')</span></button>' +
+        '<button class="filter-btn" data-filter="extended">Extended<span class="filter-count">(' + statusCounts.extended + ')</span></button>' +
+        '<button class="filter-btn" data-filter="approved">Approved<span class="filter-count">(' + statusCounts.approved + ')</span></button>' +
+        '</div>' +
+        '</div>';
+      
+      // Build table HTML
+      const tableHtml = '<div class="grid-table-container">' +
+                       '<h3>All Projects (' + allCards.length + ')</h3>' +
+                       controlsHtml +
+                       '<div class="table-scroll">' +
+                       '<table class="grid-table" id="gridTable">' +
+                       '<thead>' +
+                       '<tr>' +
+                       '<th data-column="name">Project Name<span class="sort-indicator"></span></th>' +
+                       '<th data-column="client">Client<span class="sort-indicator"></span></th>' +
+                       '<th data-column="status">Status<span class="sort-indicator"></span></th>' +
+                       '<th data-column="list">List<span class="sort-indicator"></span></th>' +
+                       '<th data-column="recipients">Recipients<span class="sort-indicator"></span></th>' +
+                       '<th data-column="activity">Last Activity<span class="sort-indicator"></span></th>' +
+                       '<th data-column="due">Due Date<span class="sort-indicator"></span></th>' +
+                       '<th data-column="version">Version<span class="sort-indicator"></span></th>' +
+                       '<th>Customer Review</th>' +
+                       '<th>Actions</th>' +
+                       '</tr>' +
+                       '</thead>' +
+                       '<tbody id="gridTableBody">' +
+                       '</tbody>' +
+                       '</table>' +
+                       '</div>' +
+                       '</div>';
+      
+      container.innerHTML = tableHtml;
+      
+      // Render table rows
+      renderGridRows(filteredCards);
+      
+      // Attach event listeners
+      attachGridEventListeners();
+    }
+    
+    function renderGridRows(cards) {
+      const tbody = document.getElementById('gridTableBody');
+      if (!tbody) {
+        console.error('Grid table body not found!');
+        return;
+      }
+      
+      console.log('Rendering grid with', cards.length, 'cards');
+      let tableRows = '';
+      cards.forEach(card => {
+        const status = getCardStatus(card);
+        const clientName = extractClientName(card.name);
+        const recipients = getRecipients(card);
+        const lastActivity = card.dateLastActivity ? new Date(card.dateLastActivity).toLocaleDateString() : '-';
+        const dueDate = card.due ? new Date(card.due).toLocaleDateString() : '-';
+        const version = 'v1'; // You can extract this from card data if available
+        
+        const customerReviewLink = generateCustomerReviewLink(card);
+        
+        tableRows += '<tr class="grid-row" data-card-id="' + card.id + '">';
+        tableRows += '<td class="project-name" title="' + escapeHTML(card.name) + '">' + escapeHTML(card.name) + '</td>';
+        tableRows += '<td class="client-name" title="' + escapeHTML(clientName) + '">' + escapeHTML(clientName) + '</td>';
+        tableRows += '<td><span class="status-badge-cell status-' + status + '">' + status + '</span></td>';
+        tableRows += '<td class="list-name" title="' + escapeHTML(card.listName || 'Unknown List') + '">' + escapeHTML(card.listName || 'Unknown List') + '</td>';
+        tableRows += '<td class="recipients-cell">';
+        tableRows += '<div class="recipients-preview">' + escapeHTML(recipients.preview) + '</div>';
+        if (recipients.full.length > 1) {
+          tableRows += '<div class="recipients-full">' + recipients.full.map(r => escapeHTML(r)).join('<br>') + '</div>';
+        }
+        tableRows += '</td>';
+        tableRows += '<td>' + lastActivity + '</td>';
+        tableRows += '<td>' + dueDate + '</td>';
+        tableRows += '<td>' + version + '</td>';
+        tableRows += '<td class="customer-review-cell">' + customerReviewLink + '</td>';
+        tableRows += '<td class="actions-cell">';
+        tableRows += '<button class="action-btn btn-primary grid-open-btn" data-card-id="' + card.id + '" onclick="console.log(\'Button clicked for\', \'' + card.id + '\')">Open</button>';
+        tableRows += '</td>';
+        tableRows += '</tr>';
+      });
+      
+      tbody.innerHTML = tableRows;
+    }
+    
+    function extractClientName(projectName) {
+      // Extract client name from project name (e.g., "123 - Client Name - Product")
+      const parts = projectName.split(' - ');
+      if (parts.length > 1) {
+        let clientName = parts[1];
+        // Truncate if too long
+        return clientName.length > 15 ? clientName.substring(0, 15) + '...' : clientName;
+      }
+      return projectName.length > 15 ? projectName.substring(0, 15) + '...' : projectName;
+    }
+    
+    function getRecipients(card) {
+      // Extract recipients from card description or custom fields
+      const recipients = [];
+      if (card.desc && card.desc.includes('@')) {
+        const emails = card.desc.match(/[\w._%+-]+@[\w.-]+\.[A-Za-z]{2,}/g) || [];
+        recipients.push(...emails);
+      }
+      
+      if (recipients.length === 0) {
+        recipients.push('client@example.com'); // Default placeholder
+      }
+      
+      return {
+        preview: recipients[0] + (recipients.length > 1 ? ' +' + (recipients.length - 1) : ''),
+        full: recipients
+      };
+    }
+    
+    function attachGridEventListeners() {
+      // Search functionality
+      const searchInput = document.getElementById('gridSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          searchTerm = this.value.toLowerCase();
+          filterAndRenderGrid();
+        });
+      }
+      
+      // Filter buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          activeFilter = this.getAttribute('data-filter');
+          filterAndRenderGrid();
+        });
+      });
+      
+      // Sort columns
+      document.querySelectorAll('#gridTable th[data-column]').forEach(th => {
+        th.addEventListener('click', function() {
+          const column = this.getAttribute('data-column');
+          if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+          }
+          updateSortIndicators();
+          filterAndRenderGrid();
+        });
+      });
+      
+      // Row click for modal
+      document.querySelectorAll('.grid-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          if (!e.target.classList.contains('action-btn')) {
+            const cardId = this.getAttribute('data-card-id');
+            showCardModal(cardId);
+          }
+        });
+      });
+      
+      // Action buttons
+      document.querySelectorAll('.grid-open-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          showCardModal(this.getAttribute('data-card-id'));
+        });
+      });
+    }
+    
+    function filterAndRenderGrid() {
+      filteredCards = allCards.filter(card => {
+        // Filter by status
+        if (activeFilter !== 'all') {
+          const status = getCardStatus(card);
+          if (status !== activeFilter) return false;
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+          const searchableText = (card.name + ' ' + card.desc + ' ' + card.listName).toLowerCase();
+          if (!searchableText.includes(searchTerm)) return false;
+        }
+        
+        return true;
+      });
+      
+      // Sort cards
+      if (currentSort.column) {
+        filteredCards.sort((a, b) => {
+          let aVal, bVal;
+          
+          switch(currentSort.column) {
+            case 'name':
+              aVal = a.name;
+              bVal = b.name;
+              break;
+            case 'client':
+              aVal = extractClientName(a.name);
+              bVal = extractClientName(b.name);
+              break;
+            case 'status':
+              aVal = getCardStatus(a);
+              bVal = getCardStatus(b);
+              break;
+            case 'list':
+              aVal = a.listName || '';
+              bVal = b.listName || '';
+              break;
+            case 'activity':
+              aVal = a.dateLastActivity || '';
+              bVal = b.dateLastActivity || '';
+              break;
+            case 'due':
+              aVal = a.due || '';
+              bVal = b.due || '';
+              break;
+            default:
+              return 0;
+          }
+          
+          if (currentSort.direction === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+      }
+      
+      renderGridRows(filteredCards);
+      attachGridEventListeners(); // Re-attach listeners for new elements
+    }
+    
+    function updateSortIndicators() {
+      document.querySelectorAll('.sort-indicator').forEach(indicator => {
+        indicator.textContent = '';
+      });
+      
+      if (currentSort.column) {
+        const th = document.querySelector('th[data-column="' + currentSort.column + '"]');
+        if (th) {
+          const indicator = th.querySelector('.sort-indicator');
+          if (indicator) {
+            indicator.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+          }
+        }
+      }
+    }
+    
+
+    /* ---------- Update View Toggle ---------- */
+    function setView(view) {
+      currentView = view;
+      const kanbanView = document.getElementById('kanbanView');
+      const toggleBtns = document.querySelectorAll('.toggle-btn');
+      
+      toggleBtns.forEach(btn => btn.classList.remove('active'));
+      
+      if (view === 'kanban') {
+        toggleBtns[0].classList.add('active');
+        // Reset the kanban view container
+        kanbanView.className = 'status-columns kanban-view';
+        kanbanView.innerHTML = `
+          <div class="status-column">
+            <div class="status-header"><span class="status-title">PROOF SENT</span><span class="status-count" id="countSent">0</span></div>
+            <div id="columnSent"></div>
+          </div>
+          <div class="status-column">
+            <div class="status-header"><span class="status-title">REVISION NEEDED</span><span class="status-count" id="countRevision">0</span></div>
+            <div id="columnRevision"></div>
+          </div>
+          <div class="status-column">
+            <div class="status-header"><span class="status-title">EXPIRED</span><span class="status-count" id="countExpired">0</span></div>
+            <div id="columnExpired"></div>
+          </div>
+          <div class="status-column">
+            <div class="status-header"><span class="status-title">EXTENDED</span><span class="status-count" id="countExtended">0</span></div>
+            <div id="columnExtended"></div>
+          </div>
+          <div class="status-column">
+            <div class="status-header"><span class="status-title">APPROVED</span><span class="status-count" id="countApproved">0</span></div>
+            <div id="columnApproved"></div>
+          </div>
+        `;
+        populateKanbanView(); // Re-populate kanban view
+      } else {
+        toggleBtns[1].classList.add('active');
+        kanbanView.className = ''; // Clear kanban classes
+        showGridView(); // Show grid/table view
+      }
+      
+      kanbanView.style.display = view === 'kanban' ? 'grid' : 'block';
+    }
+
+    /* ---------- Modal Functions ---------- */
+    let currentModalCard = null;
+    let pendingFiles = [];
+    let currentRecipients = [];
+    
+    function showCardModal(cardId) {
+      const card = allCards.find(c => c.id === cardId);
+      if (!card) return;
+      
+      currentModalCard = card;
+      const modal = document.getElementById('cardModal');
+      const modalTitle = document.getElementById('modalTitle');
+      
+      modalTitle.textContent = card.name;
+      
+      // Reset to details tab
+      switchModalTab('details');
+      
+      // Populate details tab
+      populateDetailsTab(card);
+      
+      // Populate recipients tab
+      populateRecipientsTab(card);
+      
+      // Load attachments
+      loadCardAttachments(cardId);
+      
+      // Show modal
+      modal.classList.add('show');
+    }
+    
+    function populateDetailsTab(card) {
+      const detailsContent = document.getElementById('modalDetailsContent');
+      const status = getCardStatus(card);
+      const clientName = extractClientName(card.name);
+      const recipients = getRecipients(card);
+      
+      let content = '<div class="modal-section">';
+      content += '<h4>Project Information</h4>';
+      content += '<p><strong>Client:</strong> ' + escapeHTML(clientName) + '</p>';
+      content += '<p><strong>Status:</strong> <span class="status-badge-cell status-' + status + '">' + status + '</span></p>';
+      content += '<p><strong>List:</strong> ' + escapeHTML(card.listName) + '</p>';
+      content += '<p><strong>Due Date:</strong> ' + (card.due ? new Date(card.due).toLocaleDateString() : 'Not set') + '</p>';
+      content += '</div>';
+      
+      if (card.desc) {
+        content += '<div class="modal-section">';
+        content += '<h4>Description</h4>';
+        content += '<p>' + escapeHTML(card.desc).replace(/\\n/g, '<br>') + '</p>';
+        content += '</div>';
+      }
+      
+      if (card.labels && card.labels.length > 0) {
+        content += '<div class="modal-section">';
+        content += '<h4>Labels</h4>';
+        content += '<p>';
+        card.labels.forEach(label => {
+          content += '<span class="label-tag">' + escapeHTML(label.name) + '</span> ';
+        });
+        content += '</p>';
+        content += '</div>';
+      }
+      
+      detailsContent.innerHTML = content;
+    }
+    
+    function populateRecipientsTab(card) {
+      const recipients = getRecipients(card);
+      currentRecipients = [...recipients.full];
+      
+      // Set description
+      document.getElementById('projectDescription').value = card.desc || '';
+      
+      // Render recipient tags
+      renderRecipientTags();
+    }
+    
+    function renderRecipientTags() {
+      const container = document.getElementById('recipientTags');
+      if (!container) return;
+      
+      let html = '';
+      currentRecipients.forEach((recipient, index) => {
+        html += '<div class="recipient-tag">';
+        html += '<span>' + escapeHTML(recipient) + '</span>';
+        html += '<button class="recipient-remove" data-index="' + index + '">\u00d7</button>';
+        html += '</div>';
+      });
+      
+      container.innerHTML = html;
+      
+      // Attach remove handlers
+      container.querySelectorAll('.recipient-remove').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          currentRecipients.splice(index, 1);
+          renderRecipientTags();
+        });
+      });
+    }
+    
+    async function loadCardAttachments(cardId) {
+      const container = document.getElementById('existingAttachments');
+      container.innerHTML = 'Loading attachments...';
+      
+      try {
+        // Get detailed card info with attachments
+        const apiKey = localStorage.getItem('tempApiKey') || prompt('Enter API Key (from .env API_KEY):');
+        if (apiKey) {
+          localStorage.setItem('tempApiKey', apiKey);
+        }
+        
+        const response = await fetchJSON(`/api/projects/${cardId}`, {
+          headers: { 'x-api-key': apiKey }
+        });
+        
+        if (response.success && response.project.attachments) {
+          let attachmentsHtml = '';
+          response.project.attachments.forEach(attachment => {
+            attachmentsHtml += '<div class="file-item">';
+            attachmentsHtml += '<span>' + escapeHTML(attachment.name) + '</span>';
+            attachmentsHtml += '<a href="' + attachment.url + '" target="_blank" class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;">View</a>';
+            attachmentsHtml += '</div>';
+          });
+          container.innerHTML = attachmentsHtml || '<p>No attachments</p>';
+        } else {
+          container.innerHTML = '<p>No attachments</p>';
+        }
+      } catch (error) {
+        container.innerHTML = '<p>Error loading attachments</p>';
+      }
+    }
+    
+    function switchModalTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-tab') === tabName) {
+          tab.classList.add('active');
+        }
+      });
+      
+      // Update tab content
+      document.querySelectorAll('.modal-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(tabName + 'Tab').classList.add('active');
+    }
+    
+    async function saveModalChanges() {
+      if (!currentModalCard) return;
+      
+      setLoading(true);
+      
+      try {
+        const apiKey = localStorage.getItem('tempApiKey');
+        if (!apiKey) {
+          showResult('API Key required', 'error');
+          return;
+        }
+        
+        // Update description and recipients
+        const newDescription = document.getElementById('projectDescription').value;
+        const recipientsText = currentRecipients.length > 0 ? '\\n\\nRecipients: ' + currentRecipients.join(', ') : '';
+        const updatedDescription = newDescription + recipientsText;
+        
+        // Update card via our API (which will sync with Trello)
+        await fetchJSON(`/api/projects/${currentModalCard.id}/update`, {
+          method: 'POST',
+          headers: { 'x-api-key': apiKey },
+          body: JSON.stringify({
+            description: updatedDescription,
+            recipients: currentRecipients
+          })
+        });
+        
+        // Upload any pending files
+        if (pendingFiles.length > 0) {
+          const formData = new FormData();
+          pendingFiles.forEach(file => {
+            formData.append('files', file);
+          });
+          
+          await fetchJSON(`/api/projects/${currentModalCard.id}/upload`, {
+            method: 'POST',
+            headers: { 'x-api-key': apiKey },
+            body: formData
+          });
+          
+          pendingFiles = []; // Clear pending files
+          document.getElementById('fileList').innerHTML = '';
+        }
+        
+        showResult('Changes saved successfully!', 'success');
+        
+        // Refresh the data to show updated info
+        setTimeout(() => {
+          loadTrelloData();
+          loadCardAttachments(currentModalCard.id); // Refresh attachments
+        }, 1000);
+        
+      } catch (error) {
+        showResult(`Error saving changes: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    /* ---------- File Upload Functions ---------- */
+    function initializeFileUpload() {
+      const uploadArea = document.getElementById('fileUploadArea');
+      const fileInput = document.getElementById('fileInput');
+      const fileList = document.getElementById('fileList');
+      
+      // Click to upload
+      uploadArea.addEventListener('click', () => fileInput.click());
+      
+      // Drag and drop
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+      });
+      
+      uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+      });
+      
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer.files);
+        handleFileSelection(files);
+      });
+      
+      // File input change
+      fileInput.addEventListener('change', function() {
+        const files = Array.from(this.files);
+        handleFileSelection(files);
+      });
+      
+      function handleFileSelection(files) {
+        files.forEach(file => {
+          if (validateFile(file)) {
+            pendingFiles.push(file);
+            addFileToList(file);
+          }
+        });
+      }
+      
+      function validateFile(file) {
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        if (!allowedTypes.includes(file.type)) {
+          showResult(`File type ${file.type} not allowed. Use PNG, JPG, or PDF.`, 'error');
+          return false;
+        }
+        
+        if (file.size > maxSize) {
+          showResult(`File ${file.name} is too large. Max size is 10MB.`, 'error');
+          return false;
+        }
+        
+        return true;
+      }
+      
+      function addFileToList(file) {
+        const fileList = document.getElementById('fileList');
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+          <span>${escapeHTML(file.name)} (${(file.size / 1024 / 1024).toFixed(1)}MB)</span>
+          <button class="file-remove" onclick="removeFile(${pendingFiles.length - 1})">×</button>
+        `;
+        fileList.appendChild(fileItem);
+      }
+    }
+    
+    function removeFile(index) {
+      pendingFiles.splice(index, 1);
+      renderFileList();
+    }
+    
+    function renderFileList() {
+      const fileList = document.getElementById('fileList');
+      fileList.innerHTML = '';
+      pendingFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+          <span>${escapeHTML(file.name)} (${(file.size / 1024 / 1024).toFixed(1)}MB)</span>
+          <button class="file-remove" onclick="removeFile(${index})">×</button>
+        `;
+        fileList.appendChild(fileItem);
+      });
+    }
+
+    /* ---------- Initialize Dashboard ---------- */
+    // Auto-load Trello data when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      // Attach event listeners to toggle buttons
+      document.getElementById('kanbanBtn').addEventListener('click', () => setView('kanban'));
+      document.getElementById('gridBtn').addEventListener('click', () => setView('grid'));
+      
+      // Modal close button
+      document.getElementById('modalClose').addEventListener('click', () => {
+        document.getElementById('cardModal').classList.remove('show');
+      });
+      
+      // Close modal when clicking overlay
+      document.getElementById('cardModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('show');
+        }
+      });
+      
+      // Modal tab switching
+      document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const tabName = this.getAttribute('data-tab');
+          switchModalTab(tabName);
+          
+          // Initialize file upload when artwork tab is opened
+          if (tabName === 'artwork') {
+            setTimeout(initializeFileUpload, 100);
+          }
+        });
+      });
+      
+      // Add recipient functionality
+      document.getElementById('addRecipientBtn').addEventListener('click', function() {
+        const input = document.getElementById('recipientInput');
+        const email = input.value.trim();
+        
+        if (email && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+          if (!currentRecipients.includes(email)) {
+            currentRecipients.push(email);
+            renderRecipientTags();
+            input.value = '';
+          } else {
+            showResult('Recipient already added', 'error');
+          }
+        } else {
+          showResult('Please enter a valid email address', 'error');
+        }
+      });
+      
+      // Allow adding recipients with Enter key
+      document.getElementById('recipientInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          document.getElementById('addRecipientBtn').click();
+        }
+      });
+      
+      // Save changes button
+      document.getElementById('modalSaveChanges').addEventListener('click', saveModalChanges);
+      
+      // Modal action buttons
+      document.getElementById('modalGenerateProof').addEventListener('click', function() {
+        if (currentModalCard) {
+          document.getElementById('cardModal').classList.remove('show');
+          handleGenerateProof(currentModalCard.id);
+        }
+      });
+      
+      document.getElementById('modalViewTrello').addEventListener('click', function() {
+        if (currentModalCard) {
+          window.open('https://trello.com/c/' + currentModalCard.id, '_blank');
+        }
+      });
+      
+      // Load data
+      loadTrelloData();
+    });
+  </script>
+</body>
+</html>

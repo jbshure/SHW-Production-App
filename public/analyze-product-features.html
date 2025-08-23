@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyze Product Features</title>
+</head>
+<body>
+    <h1>Analyzing Product Features</h1>
+    <div id="results"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase-config.js"></script>
+    
+    <script>
+        async function analyzeFeatures() {
+            const { createClient } = window.supabase;
+            const supabaseClient = createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.anonKey
+            );
+            
+            const { data: products } = await supabaseClient
+                .from('products')
+                .select('name, feature_list, attributes')
+                .limit(10);
+            
+            const resultsDiv = document.getElementById('results');
+            
+            // Analyze feature_list format
+            resultsDiv.innerHTML += '<h2>Sample Products with Features:</h2>';
+            
+            products.forEach(product => {
+                resultsDiv.innerHTML += `<h3>${product.name}</h3>`;
+                
+                if (product.feature_list) {
+                    resultsDiv.innerHTML += '<h4>Feature List:</h4>';
+                    resultsDiv.innerHTML += `<pre>${product.feature_list}</pre>`;
+                }
+                
+                if (product.attributes) {
+                    resultsDiv.innerHTML += '<h4>Attributes:</h4>';
+                    resultsDiv.innerHTML += `<pre>${JSON.stringify(product.attributes, null, 2)}</pre>`;
+                }
+                
+                resultsDiv.innerHTML += '<hr>';
+            });
+            
+            // Extract all unique feature types
+            const featureTypes = new Set();
+            const featureValues = {};
+            
+            products.forEach(product => {
+                if (product.feature_list) {
+                    // Parse feature list format: (Feature Name)\nValue1\nValue2\n
+                    const matches = product.feature_list.match(/\(([^)]+)\)/g);
+                    if (matches) {
+                        matches.forEach(match => {
+                            const featureName = match.replace(/[()]/g, '');
+                            featureTypes.add(featureName);
+                            
+                            // Extract values for this feature
+                            const regex = new RegExp(`\\(${featureName}\\)([^(]*?)(?=\\(|$)`, 's');
+                            const valueMatch = product.feature_list.match(regex);
+                            if (valueMatch) {
+                                const values = valueMatch[1].trim().split('\n').filter(v => v.trim());
+                                if (!featureValues[featureName]) {
+                                    featureValues[featureName] = new Set();
+                                }
+                                values.forEach(v => featureValues[featureName].add(v.trim()));
+                            }
+                        });
+                    }
+                }
+                
+                // Also check attributes
+                if (product.attributes) {
+                    Object.keys(product.attributes).forEach(key => {
+                        if (product.attributes[key] && key !== 'Templates') {
+                            featureTypes.add(key);
+                            if (!featureValues[key]) {
+                                featureValues[key] = new Set();
+                            }
+                            if (typeof product.attributes[key] === 'string') {
+                                featureValues[key].add(product.attributes[key]);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            resultsDiv.innerHTML += '<h2>Detected Feature Types:</h2>';
+            resultsDiv.innerHTML += '<ul>';
+            Array.from(featureTypes).sort().forEach(type => {
+                resultsDiv.innerHTML += `<li><strong>${type}</strong>`;
+                if (featureValues[type]) {
+                    const values = Array.from(featureValues[type]);
+                    resultsDiv.innerHTML += `: ${values.slice(0, 5).join(', ')}${values.length > 5 ? '...' : ''}`;
+                }
+                resultsDiv.innerHTML += '</li>';
+            });
+            resultsDiv.innerHTML += '</ul>';
+        }
+        
+        analyzeFeatures();
+    </script>
+</body>
+</html>

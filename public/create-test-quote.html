@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Test Quote - SHUREPRINT</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="test-delegation.css">
+</head>
+<body class="page">
+    <div class="card">
+        <div class="card__header">
+            <h1>Create Test Quote</h1>
+            <p class="subtitle">Generate a test quote directly in the running server</p>
+        </div>
+        
+        <div class="card__body">
+            <div class="test-section">
+                <h3>Test Quote Generator</h3>
+                <p>Click the button below to create a new test quote that will be properly stored in the server's memory</p>
+                <button class="btn" id="createQuote">
+                    Create Test Quote
+                </button>
+            </div>
+            
+            <div id="result" class="result"></div>
+        </div>
+        
+        <div class="card__footer"></div>
+    </div>
+    
+    <script>
+        document.getElementById('createQuote').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Creating test quote...';
+            resultDiv.className = 'result info show';
+            
+            try {
+                // Create test quote directly through the debug endpoint
+                const response = await fetch('/quote/debug/create-test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const quoteUrl = data.quoteLink;
+                    resultDiv.innerHTML = `
+                        <strong>SUCCESS - Test Quote Created</strong><br><br>
+                        Quote ID: ${data.quoteId}<br><br>
+                        <strong>Test URL:</strong><br>
+                        <a href="${quoteUrl}" target="_blank">${quoteUrl}</a><br><br>
+                        Click the link above to open the quote and test the payment delegation workflow.
+                    `;
+                    resultDiv.className = 'result success show';
+                    
+                    // Also update the test-delegation.js with the new URL
+                    localStorage.setItem('latestTestQuoteUrl', quoteUrl);
+                } else {
+                    resultDiv.textContent = 'ERROR: ' + (data.error || 'Failed to create test quote');
+                    resultDiv.className = 'result error show';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'ERROR: ' + error.message;
+                resultDiv.className = 'result error show';
+            }
+        });
+    </script>
+</body>
+</html>

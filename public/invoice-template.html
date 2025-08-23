@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShurePrint Invoice</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333; 
+            background: white;
+        }
+        
+        .invoice-header { 
+            border-bottom: 3px solid #e3fc02; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+        }
+        
+        .company-info h1 { 
+            font-size: 28px; 
+            margin: 0 0 10px 0; 
+            font-weight: bold; 
+        }
+        
+        .company-details { 
+            color: #666; 
+            font-size: 14px; 
+            line-height: 1.4; 
+        }
+        
+        .invoice-info { 
+            text-align: right; 
+        }
+        
+        .invoice-number { 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #000; 
+            margin-bottom: 10px; 
+        }
+        
+        .invoice-date { 
+            color: #666; 
+            font-size: 14px; 
+        }
+        
+        .billing-section { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 40px; 
+            margin-bottom: 40px; 
+        }
+        
+        .billing-details h3 { 
+            font-size: 16px; 
+            margin: 0 0 15px 0; 
+            color: #000; 
+            border-bottom: 1px solid #ddd; 
+            padding-bottom: 8px; 
+        }
+        
+        .billing-details p { 
+            margin: 5px 0; 
+            font-size: 14px; 
+        }
+        
+        .items-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 30px 0; 
+            border: 1px solid #ddd; 
+        }
+        
+        .items-table th, .items-table td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        
+        .items-table th { 
+            background-color: #f8f9fa; 
+            font-weight: bold; 
+            font-size: 14px; 
+        }
+        
+        .items-table td { 
+            font-size: 14px; 
+        }
+        
+        .items-table .amount { 
+            text-align: right; 
+            font-weight: 500; 
+        }
+        
+        .totals-section { 
+            margin-top: 30px; 
+            display: flex; 
+            justify-content: flex-end; 
+        }
+        
+        .totals-table { 
+            width: 300px; 
+            border-collapse: collapse; 
+        }
+        
+        .totals-table td { 
+            padding: 8px 15px; 
+            border-bottom: 1px solid #eee; 
+        }
+        
+        .totals-table .label { 
+            text-align: left; 
+            font-weight: 500; 
+        }
+        
+        .totals-table .amount { 
+            text-align: right; 
+            font-weight: 500; 
+        }
+        
+        .totals-table .total-row { 
+            border-top: 2px solid #333; 
+            border-bottom: 2px solid #333; 
+            font-weight: bold; 
+            font-size: 16px; 
+        }
+        
+        .payment-info { 
+            margin-top: 40px; 
+            padding: 20px; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+            border-left: 4px solid #e3fc02; 
+        }
+        
+        .payment-info h3 { 
+            margin: 0 0 15px 0; 
+            color: #000; 
+            font-size: 16px; 
+        }
+        
+        .payment-info p { 
+            margin: 8px 0; 
+            font-size: 14px; 
+        }
+        
+        .terms-section { 
+            margin-top: 40px; 
+            padding-top: 20px; 
+            border-top: 1px solid #ddd; 
+            font-size: 12px; 
+            color: #666; 
+        }
+        
+        .terms-section h4 { 
+            margin: 0 0 10px 0; 
+            color: #000; 
+            font-size: 14px; 
+        }
+        
+        .status-badge { 
+            display: inline-block; 
+            padding: 8px 16px; 
+            background: #28a745; 
+            color: white; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+        }
+        
+        .status-badge.pending { 
+            background: #ffc107; 
+            color: #000; 
+        }
+        
+        @media print { 
+            body { margin: 0; padding: 15px; } 
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="company-info">
+            <h1>SHUREPRINT</h1>
+            <div class="company-details">
+                Professional Printing Services<br>
+                Email: team@shureprint.com<br>
+                Phone: (555) 123-4567<br>
+                Web: shureprint.com
+            </div>
+        </div>
+        <div class="invoice-info">
+            <div class="invoice-number">INVOICE #<span id="invoiceNumber">INV-2025001</span></div>
+            <div class="invoice-date">
+                Date: <span id="invoiceDate"></span><br>
+                Due Date: <span id="dueDate"></span>
+            </div>
+            <div style="margin-top: 15px;">
+                <span class="status-badge" id="paymentStatus">PAID</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="billing-section">
+        <div class="billing-details">
+            <h3>Bill To:</h3>
+            <p><strong id="clientCompany">Client Company Name</strong></p>
+            <p id="clientContact">Contact Person</p>
+            <p id="clientEmail">email@company.com</p>
+            <p id="clientPhone">Phone Number</p>
+        </div>
+        <div class="billing-details">
+            <h3>Project Details:</h3>
+            <p><strong>Project:</strong> <span id="projectName">Project Name</span></p>
+            <p><strong>Quote #:</strong> <span id="originalQuote">QT-2025001</span></p>
+            <p><strong>Sales Rep:</strong> <span id="salesRep">Sales Representative</span></p>
+            <p><strong>Delivery:</strong> <span id="deliveryTime">Estimated Time</span></p>
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Specifications</th>
+                <th style="text-align: center;">Quantity</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody id="invoiceItems">
+            <!-- Items will be populated by JavaScript -->
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <table class="totals-table">
+            <tr>
+                <td class="label">Subtotal:</td>
+                <td class="amount" id="invoiceSubtotal">$0.00</td>
+            </tr>
+            <tr>
+                <td class="label">Tax (<span id="taxRate">9.5</span>%):</td>
+                <td class="amount" id="invoiceTax">$0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td class="label">TOTAL:</td>
+                <td class="amount" id="invoiceTotal">$0.00</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="payment-info">
+        <h3>✅ Payment Received</h3>
+        <p><strong>Payment Method:</strong> <span id="paymentMethod">Credit Card</span></p>
+        <p><strong>Transaction ID:</strong> <span id="transactionId">txn_1234567890</span></p>
+        <p><strong>Payment Date:</strong> <span id="paymentDate"></span></p>
+        <p style="color: #28a745; font-weight: 600;">Thank you! Your payment has been processed successfully.</p>
+    </div>
+
+    <div class="terms-section">
+        <h4>Terms & Conditions</h4>
+        <p>• Production will begin immediately upon payment confirmation</p>
+        <p>• Estimated delivery time is subject to artwork approval and production schedule</p>
+        <p>• Any changes to artwork after approval may result in additional charges</p>
+        <p>• ShurePrint is not responsible for delays due to incorrect shipping information</p>
+        <p>• All sales are final. Returns accepted only for manufacturing defects</p>
+        
+        <div style="margin-top: 20px; text-align: center; font-size: 11px;">
+            <strong>Thank you for choosing ShurePrint!</strong><br>
+            This invoice was generated automatically on <span id="generatedDate"></span>
+        </div>
+    </div>
+
+    <script>
+        // Initialize invoice with current date
+        function initializeInvoice() {
+            const now = new Date();
+            const dueDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
+            
+            document.getElementById('invoiceDate').textContent = now.toLocaleDateString();
+            document.getElementById('dueDate').textContent = dueDate.toLocaleDateString();
+            document.getElementById('paymentDate').textContent = now.toLocaleDateString();
+            document.getElementById('generatedDate').textContent = now.toLocaleString();
+        }
+
+        // Populate invoice from URL parameters or data object
+        function populateInvoice(data) {
+            if (data.invoiceNumber) document.getElementById('invoiceNumber').textContent = data.invoiceNumber;
+            if (data.clientCompany) document.getElementById('clientCompany').textContent = data.clientCompany;
+            if (data.clientContact) document.getElementById('clientContact').textContent = data.clientContact;
+            if (data.clientEmail) document.getElementById('clientEmail').textContent = data.clientEmail;
+            if (data.clientPhone) document.getElementById('clientPhone').textContent = data.clientPhone;
+            if (data.projectName) document.getElementById('projectName').textContent = data.projectName;
+            if (data.originalQuote) document.getElementById('originalQuote').textContent = data.originalQuote;
+            if (data.salesRep) document.getElementById('salesRep').textContent = data.salesRep;
+            if (data.deliveryTime) document.getElementById('deliveryTime').textContent = data.deliveryTime;
+            if (data.paymentMethod) document.getElementById('paymentMethod').textContent = data.paymentMethod;
+            if (data.transactionId) document.getElementById('transactionId').textContent = data.transactionId;
+            
+            // Populate items
+            if (data.items && data.items.length > 0) {
+                const tbody = document.getElementById('invoiceItems');
+                tbody.innerHTML = '';
+                
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.product}</td>
+                        <td>${item.specs || '-'}</td>
+                        <td style="text-align: center;">${item.quantity.toLocaleString()}</td>
+                        <td class="amount">$${item.unitPrice.toFixed(2)}</td>
+                        <td class="amount">$${item.total.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            // Populate totals
+            if (data.subtotal) document.getElementById('invoiceSubtotal').textContent = data.subtotal;
+            if (data.tax) document.getElementById('invoiceTax').textContent = data.tax;
+            if (data.total) document.getElementById('invoiceTotal').textContent = data.total;
+            if (data.taxRate) document.getElementById('taxRate').textContent = data.taxRate;
+        }
+
+        // Parse URL parameters on load
+        window.addEventListener('load', function() {
+            initializeInvoice();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            if (dataParam) {
+                try {
+                    const invoiceData = JSON.parse(decodeURIComponent(dataParam));
+                    populateInvoice(invoiceData);
+                } catch (e) {
+                    console.error('Error parsing invoice data:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

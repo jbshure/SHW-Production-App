@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Login – SHUREPRINT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#111111;
+      --text:#222222;
+      --muted:#6b6b6b;
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --stroke:#e9e9e9;
+      --neon:#E3FF33;
+      --cream:#FFF9F0;
+      --radius:16px;
+      --shadow:0 8px 28px rgba(0,0,0,.08);
+    }
+    
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;background:var(--bg);color:var(--text);
+      font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      position: relative;
+    }
+    
+    .back-link {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background: var(--panel);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+    }
+    
+    .back-link:hover {
+      color: var(--ink);
+      transform: translateX(-3px);
+      border-color: var(--neon);
+    }
+    
+    .login-card{
+      width:min(400px,90vw);
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    
+    .login-header{
+      padding:24px 28px;
+      border-bottom:1px solid var(--stroke);
+      background:var(--cream);
+    }
+    
+    .logo{height:40px;width:auto;display:block;margin-bottom:12px}
+    .title{font-size:24px;line-height:1.2;font-weight:800;color:var(--ink);margin:0}
+    .subtitle{color:var(--muted);font-size:14px;margin:8px 0 0}
+    
+    .login-form{padding:28px}
+    
+    .form-group{margin-bottom:20px}
+    .label{display:block;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:8px}
+    
+    .input{
+      width:100%;height:48px;border:1.5px solid var(--stroke);border-radius:12px;
+      padding:0 16px;font:inherit;color:var(--ink);background:#fff;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    .input:focus{
+      outline:none;border-color:var(--neon);
+      box-shadow:0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent);
+    }
+    
+    .btn{
+      width:100%;height:48px;border:0;border-radius:12px;
+      background:var(--neon);color:#000;font-weight:800;font-size:16px;
+      cursor:pointer;transition:filter .15s ease;
+    }
+    .btn:hover{filter:brightness(.97)}
+    .btn:active{transform:translateY(1px)}
+    
+    .quick-links{padding:20px 28px;border-top:1px solid var(--stroke);background:var(--cream)}
+    .quick-links h4{margin:0 0 12px;font-size:14px;color:var(--muted)}
+    .link{display:block;color:var(--ink);text-decoration:none;padding:8px 0;border-bottom:1px solid transparent}
+    .link:hover{color:var(--neon)}
+    
+    .error{
+      background:#fdecee;border:1px solid #f6c9cf;color:#7a1121;
+      padding:12px;border-radius:8px;margin-bottom:16px;display:none;
+    }
+  </style>
+</head>
+<body>
+  <a href="../index.html" class="back-link">← Back to Home</a>
+  <div class="login-card">
+    <div class="login-header">
+      <img src="/assets/logo.png" alt="SHUREPRINT" class="logo" onerror="this.style.display='none'">
+      <h1 class="title">Admin Access</h1>
+      <p class="subtitle">Enter your API key to access the admin dashboard</p>
+    </div>
+    
+    <div class="login-form">
+      <div id="error" class="error"></div>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="apiKey" class="label">API Key</label>
+          <input type="password" id="apiKey" class="input" placeholder="Enter your API key" required>
+        </div>
+        
+        <button type="submit" class="btn">Access Admin Dashboard</button>
+      </form>
+    </div>
+    
+    <div class="quick-links">
+      <h4>Quick Access</h4>
+      <a href="/proof/admin?apikey=secure-api-key-12345-change-in-production" class="link">Sales Rep Dashboard →</a>
+      <a href="/proof/admin/dashboard?apikey=secure-api-key-12345-change-in-production" class="link">Advanced Admin Dashboard →</a>
+      <a href="/health" class="link">System Health Check →</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const errorDiv = document.getElementById('error');
+      
+      if (!apiKey) {
+        showError('Please enter an API key');
+        return;
+      }
+      
+      // Store API key for future requests
+      localStorage.setItem('shureprint_api_key', apiKey);
+      
+      // Test the API key by making a request
+      fetch('/proof/admin/status/test', {
+        headers: { 'x-api-key': apiKey }
+      })
+      .then(response => {
+        if (response.status === 401) {
+          throw new Error('Invalid API key');
+        }
+        // API key is valid, redirect to admin dashboard
+        window.location.href = '/proof/admin?apikey=' + encodeURIComponent(apiKey);
+      })
+      .catch(error => {
+        showError('Invalid API key. Please check your credentials.');
+      });
+    });
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+    
+    // Auto-fill if API key is already stored
+    const storedKey = localStorage.getItem('shureprint_api_key');
+    if (storedKey) {
+      document.getElementById('apiKey').value = storedKey;
+    }
+  </script>
+</body>
+</html>

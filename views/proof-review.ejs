@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Art Proof Review - <%= proofData.projectName %></title>
+  <style nonce="<%= locals.cspNonce %>">
+    :root {
+      --cream:#FFF9F0;
+      --gold:#E3FF33;
+      --pink:#F7D8EA;
+      --ink:#111111;
+      --text:#333333;
+      --muted:#666666;
+      --stroke:#E2DFDA;
+      --bg:#FAF9F7;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif}
+    .page{display:grid;place-items:start center;padding:32px}
+    .card{width:min(920px,96vw);background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.07);overflow:hidden;border:1px solid #eee}
+
+    .card__header{background:var(--cream);padding:20px 24px 10px;border-bottom:1px solid var(--stroke)}
+    .title{margin:10px 0 0;font-size:26px;font-weight:800;color:var(--ink)}
+    .title .tag{background:var(--cream);border:1px solid var(--stroke);border-radius:8px;padding:.1em .4em}
+
+    .meta{padding:18px 24px;border-bottom:1px solid var(--stroke)}
+    .meta .row{display:flex;gap:24px;align-items:center;margin:6px 0;flex-wrap:wrap}
+    .meta span{color:var(--muted);margin-right:6px}
+    .meta .token{background:var(--cream);border:1px solid var(--stroke);border-radius:6px;padding:2px 6px;font-style:normal;color:var(--ink)}
+    .meta .stretch{flex:1 1 auto}
+
+    .art{padding:16px 24px}
+    .art h3{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink)}
+    .art .artbox{border:2px solid var(--stroke);border-radius:12px;overflow:hidden;background:#fff;padding:16px}
+
+    .form{padding:8px 24px 24px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .label{display:block;font-size:14px;font-weight:700;color:var(--ink);margin:6px 0}
+    .check{display:flex;align-items:center;gap:8px;margin:6px 0}
+    .check input{width:16px;height:16px;accent-color:var(--gold)}
+
+    .disclaimer{font-size:13px;color:var(--muted);margin:12px 0;max-width:420px}
+
+    textarea{
+      width:100%;min-height:160px;border:2px solid var(--stroke);border-radius:10px;padding:10px;resize:vertical;font:inherit
+    }
+    textarea:focus, .mini input:focus { outline:none;border-color:var(--gold); }
+
+    /* Signature row aligned to top */
+    .sigrow{display:grid;grid-template-columns:1fr 220px 1fr;gap:24px;margin-top:18px;align-items:start}
+    .sigrow .mini{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start}
+    .sig canvas{width:100%;height:150px;border:2px solid var(--stroke);border-radius:12px;background:#fff;display:block}
+    .sig .link{margin-top:8px;background:none;border:0;color:#000;cursor:pointer;padding:0;font-weight:600}
+
+    .mini input[type="date"], .mini input[type="text"]{
+      width:100%;height:40px;border:2px solid var(--stroke);border-radius:10px;padding:0 10px;font:inherit
+    }
+
+    /* Compact buttons */
+    .card .btn {
+      background: var(--gold);
+      color: #000;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-weight: 800;
+      line-height: 1.2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      text-decoration: none;
+    }
+    .card .btn.secondary { background: var(--muted); }
+    .card .btn:hover { filter: brightness(.95); }
+
+    /* Artwork header bar layout */
+    .artwork-file__bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--stroke);
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .artwork-file__bar .header-text { min-width: 0; }
+    .artwork-file__bar .header-actions {
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+
+    /* Actions row layout */
+    .actions {
+      padding: 24px;
+    }
+    .actions__row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card__footer{height:36px;background:var(--pink)}
+
+    .loading.show { display: block; }
+    .result.success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .result.error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+
+    @media (max-width: 768px) {
+      .page { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .sigrow { grid-template-columns: 1fr; gap: 16px; }
+      .art, .form { padding: 16px 20px; }
+      .actions { padding: 16px 20px 24px; }
+      .artwork-file__bar .header-actions {
+        width: 100%;
+        margin-left: 0;
+      }
+      .artwork-file__bar .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body class="page">
+  <div class="card">
+    <header class="card__header">
+      <img src="/assets/logo.png" alt="SHUREPRINT" class="logo" style="height: 40px; width: auto;">
+      <h1 class="title">Art Proof Review – <span class="tag"><%= proofData.projectName %></span></h1>
+    </header>
+
+    <section class="meta">
+      <div class="row">
+        <span>Art Proof #:</span>
+        <em class="token"><%= proofData.artProofNumber %></em>
+        <span>Proof Version:</span>
+        <em class="token"><%= proofData.proofVersion %></em>
+        <span class="stretch">Date Sent:</span>
+        <em class="token"><%= proofData.dateSent %></em>
+      </div>
+      <div class="row">
+        <span>Sales Rep:</span>
+        <em class="token"><%= proofData.salesRepFirst %> <%= proofData.salesRepLast %></em>
+        <span class="stretch">Client Company:</span>
+        <em class="token"><%= proofData.clientCompany %></em>
+      </div>
+    </section>
+
+    <section class="art">
+      <h3>ARTWORK PREVIEW</h3>
+      <div class="artbox">
+        <% if (proofData.artworkAttachments && proofData.artworkAttachments.length > 0) { %>
+          <% proofData.artworkAttachments.forEach((attachment) => { %>
+            <div class="artwork-file" style="margin-bottom: 16px; border: 1px solid var(--stroke); border-radius: 12px; overflow: hidden; background: #fff;">
+              <div class="artwork-file__bar">
+                <div class="header-text">
+                  <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Artwork Preview</div>
+                  <div style="font-size: 12px; color: var(--muted);">Review the artwork below</div>
+                </div>
+                <div class="header-actions">
+                  <a href="<%= attachment.url %>" target="_blank" download class="btn">Download Art</a>
+                </div>
+              </div>
+              <div style="padding: 20px; text-align: center;">
+                <% if (attachment.url) { %>
+                  <img
+                    class="artwork-img"
+                    src="/artwork/rehost/<%= attachment.id %>?url=<%= encodeURIComponent(attachment.url) %>&name=<%= encodeURIComponent(attachment.name) %>&t=<%= Date.now() %>"
+                    alt="<%= attachment.name %>"
+                    data-original-url="<%= attachment.url %>"
+                    data-name="<%= attachment.name %>"
+                    style="max-width: 100%; height: auto; max-height: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                  />
+                <% } else { %>
+                  <div style="padding: 40px; color: var(--muted);">
+                    <div style="font-size: 3em; margin-bottom: 16px; opacity: 0.6;">🎨</div>
+                    <p>No preview available</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div style="padding: 40px; text-align: center; color: var(--muted);">
+            <div style="font-size: 3em; margin-bottom: 16px; opacity: 0.6;">🎨</div>
+            <p style="font-size: 16px; margin-bottom: 8px;"><strong>No artwork files attached</strong></p>
+            <p style="font-size: 14px;">Artwork will be provided separately or contact your sales representative.</p>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="form">
+      <form id="approvalForm">
+        <div class="grid">
+          <div>
+            <label class="label">Proof Approval *</label>
+            <label class="check"><input type="radio" name="approved" value="true" id="approve" required> ✓ APPROVE</label>
+            <label class="check"><input type="radio" name="approved" value="false" id="reject" required> ✗ REQUEST CHANGES</label>
+            <p class="disclaimer">
+              I acknowledge this artwork is correct and approved for production. I understand colors may vary slightly based on materials, and shureprint is not responsible for errors after approval.
+            </p>
+          </div>
+          <div>
+            <label class="label" for="comments">Comments</label>
+            <textarea name="comments" id="comments" placeholder="Enter your feedback here..."></textarea>
+          </div>
+        </div>
+
+        <div class="sigrow">
+          <div class="sig">
+            <label class="label">Digital Signature *</label>
+            <canvas id="signatureCanvas" width="400" height="150"></canvas>
+            <button type="button" id="clearSignature" class="link">Clear Signature</button>
+          </div>
+          <div class="mini">
+            <label class="label" for="customerName">Name *</label>
+            <input type="text" name="customerName" id="customerName" required placeholder="Full Name">
+          </div>
+          <div class="mini">
+            <label class="label" for="date">Date</label>
+            <input type="date" id="date" name="date" value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="actions">
+      <div class="actions__row">
+        <button type="submit" form="approvalForm" class="btn" id="submitApprovalBtn">Submit Approval</button>
+      </div>
+      <div class="loading" style="display: none; text-align: center; padding: 12px;">
+      </div>
+      <div id="result" class="result" style="display: none; margin-top: 12px; padding: 12px; border-radius: 5px;"></div>
+    </section>
+
+    <footer class="card__footer"></footer>
+  </div>
+
+  <script nonce="<%= locals.cspNonce %>">
+    // Signature Canvas Setup
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let isDrawing = false;
+    let hasSignature = false;
+
+    function sizeCanvasToDisplay() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#000';
+    }
+    function initCanvas() { sizeCanvasToDisplay(); }
+    initCanvas();
+
+    let resizeRAF;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(resizeRAF);
+      resizeRAF = requestAnimationFrame(() => {
+        initCanvas();
+        hasSignature = false;
+      });
+    });
+
+    function getEventPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (e.touches && e.touches[0]) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', handleTouch, { passive: false });
+    canvas.addEventListener('touchmove', handleTouch, { passive: false });
+    canvas.addEventListener('touchend', handleTouch, { passive: false });
+
+    function startDrawing(e) {
+      e.preventDefault();
+      isDrawing = true;
+      const pos = getEventPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    function draw(e) {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const pos = getEventPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      hasSignature = true;
+    }
+    function stopDrawing(e) {
+      e.preventDefault();
+      if (isDrawing) {
+        isDrawing = false;
+        ctx.beginPath();
+      }
+    }
+    function handleTouch(e) {
+      e.preventDefault();
+      if (e.type === 'touchstart') startDrawing(e);
+      else if (e.type === 'touchmove') draw(e);
+      else if (e.type === 'touchend') stopDrawing(e);
+    }
+
+    document.getElementById('clearSignature').addEventListener('click', function() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSignature = false;
+    });
+
+    // Form submission
+    document.getElementById('approvalForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const data = {};
+      for (let [key, value] of formData.entries()) data[key] = value;
+
+      if (!data.approved || !data.customerName) {
+        showResult('Please complete all required fields.', 'error');
+        return;
+      }
+      if (!hasSignature) {
+        showResult('Please provide your digital signature.', 'error');
+        return;
+      }
+      data.signature = canvas.toDataURL('image/png');
+
+      const submitBtn = document.getElementById('submitApprovalBtn');
+      document.querySelector('.loading').style.display = 'block';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('<%= submitUrl %>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          showResult(result.message + '\n\n' + (result.nextSteps || ''), 'success');
+          this.style.display = 'none';
+        } else {
+          showResult(result.error || 'An error occurred. Please try again.', 'error');
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        showResult('Network error. Please check your connection and try again.', 'error');
+        submitBtn.disabled = false;
+      } finally {
+        document.querySelector('.loading').style.display = 'none';
+      }
+    });
+
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.className = `result ${type}`;
+      resultDiv.style.display = 'block';
+      resultDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Auto-hide comments section if approving
+    document.querySelectorAll('input[name="approved"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const commentsSection = document.getElementById('comments').parentElement;
+        if (this.value === 'true') {
+          commentsSection.style.display = 'none';
+          document.getElementById('comments').removeAttribute('required');
+        } else {
+          commentsSection.style.display = 'block';
+          document.getElementById('comments').setAttribute('required', 'required');
+        }
+      });
+    });
+
+    // Enhanced image error handling with retry logic
+    document.querySelectorAll('.artwork-img').forEach(img => {
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      img.addEventListener('error', function() {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          const currentSrc = this.src;
+          // Add a timestamp to force reload
+          const separator = currentSrc.includes('?') ? '&' : '?';
+          this.src = currentSrc + separator + 'retry=' + retryCount + '&t=' + Date.now();
+        } else {
+          // After retries, show error message
+          const originalUrl = this.getAttribute('data-original-url');
+          const fileName = this.getAttribute('data-name') || 'artwork';
+          
+          this.parentElement.innerHTML = `
+            <div style="padding: 40px; color: var(--muted);">
+              <div style="font-size: 3em; margin-bottom: 16px; opacity: 0.6;">🎨</div>
+              <p>Unable to display artwork preview</p>
+              <p style="font-size: 12px; margin-top: 8px;">${fileName}</p>
+              <a href="${originalUrl}" target="_blank" 
+                 style="background: var(--gold); color: #fff; padding: 8px 16px; 
+                        border-radius: 6px; text-decoration: none; font-size: 13px; 
+                        font-weight: 600; display: inline-block; margin-top: 12px;">
+                View Original File
+              </a>
+            </div>
+          `;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

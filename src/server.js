@@ -8,6 +8,7 @@ const session = require('express-session');
 const path = require('path');
 
 const passport = require('./config/passport');
+const puppeteer = require('puppeteer');
 const webhookRoutes = require('./routes/webhooks');
 const proofRoutes   = require('./routes/proofs');
 const quoteRoutes   = require('./routes/quotes');
@@ -70,10 +71,20 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .map(s => s.trim())
   .filter(Boolean);
 
+// Add localhost origins for development
+if (!allowedOrigins.length || process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000');
+  allowedOrigins.push('http://127.0.0.1:3000');
+}
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
+    if (!origin) return cb(null, true); // Allow same-origin requests
     if (allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow localhost in development
+    if (process.env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return cb(null, true);
+    }
     return cb(new Error('Not allowed by CORS'));
   },
   credentials: process.env.CORS_CREDENTIALS === 'true',
@@ -166,6 +177,50 @@ app.post('/api/store-quote', (req, res) => {
 app.get('/test-quote/:quoteId', (req, res) => {
   const { quoteId } = req.params;
   res.redirect(`/quote-viewer.html?id=${quoteId}`);
+});
+
+// PDF Generation endpoint
+app.post('/api/generate-pdf', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { htmlContent, filename } = req.body;
+    
+    if (!htmlContent) {
+      return res.status(400).json({ error: 'HTML content is required' });
+    }
+    
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    
+    // Set the HTML content
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    
+    // Generate PDF
+    const pdfBuffer = await page.pdf({
+      format: 'Letter',
+      printBackground: true,
+      margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' }
+    });
+    
+    await browser.close();
+    
+    // Send PDF as response
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename || 'quote.pdf'}"`,
+      'Content-Length': pdfBuffer.length
+    });
+    
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    res.status(500).json({ error: 'Failed to generate PDF', details: error.message });
+  }
 });
 
 // Competitor scraper routes

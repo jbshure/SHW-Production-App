@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Dashboard – SHUREPRINT</title>
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style nonce="<%= locals.cspNonce %>">
+    :root{
+      /* Brand base */
+      --ink:#111111;           /* primary text / headings */
+      --text:#222222;          /* body text */
+      --muted:#6b6b6b;         /* secondary text */
+      --bg:#ffffff;            /* page background */
+      --panel:#ffffff;         /* card background */
+      --stroke:#e9e9e9;        /* subtle borders */
+
+      /* Accents */
+      --neon:#E3FF33;          /* action accent */
+      --cream:#FFF9F0;         /* soft panel bg */
+      --tag:#f7f7f7;           /* light chip/tag */
+      --pink:#F7D8EA;          /* thin footer stripe (optional) */
+
+      --radius:16px;
+      --shadow:0 8px 28px rgba(0,0,0,.08);
+      --gap:24px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;background:var(--bg);color:var(--text);
+      font:16px/1.55 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+
+    .page{display:grid;place-items:start center;padding:32px}
+    .card{
+      width:min(920px,96vw);
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Header: cream bar to echo site sections while staying minimal */
+    .card__header{
+      padding:24px 28px 18px;
+      border-bottom:1px solid var(--stroke);
+      background:var(--cream);
+    }
+    .logo{height:40px;width:auto;display:block}
+    .title{margin:12px 0 0;font-size:28px;line-height:1.15;font-weight:800;color:var(--ink)}
+    .tag{
+      display:inline-block;margin-left:.4ch;
+      background:var(--tag);border:1px solid var(--stroke);border-radius:10px;
+      padding:.2em .6em;font-size:.825rem;font-weight:600;color:var(--ink);
+      vertical-align:middle;letter-spacing:.02em;
+    }
+
+    /* Meta row */
+    .meta{padding:18px 28px;border-bottom:1px solid var(--stroke);background:#fff}
+    .meta .row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+    .meta span{color:var(--muted)}
+    .token{
+      background:var(--tag);border:1px solid var(--stroke);
+      border-radius:8px;padding:4px 8px;color:var(--ink);font-style:normal;font-weight:600
+    }
+    .stretch{flex:1 1 auto}
+
+    /* Form: light cream panel to break up white while staying subtle */
+    .form{padding:8px 28px 28px;background:var(--cream)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+    .label{display:block;font-size:.9rem;font-weight:700;color:var(--ink);margin:6px 0 8px}
+
+    input[type="text"], input[type="email"], select{
+      width:100%;height:44px;border:1.5px solid var(--stroke);border-radius:12px;
+      padding:0 12px;font:inherit;color:var(--ink);background:#fff;
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    input::placeholder, select:invalid { color:#9b9b9b }
+    input:focus-visible, select:focus-visible{
+      outline:none;border-color:var(--neon);
+      box-shadow:0 0 0 3px color-mix(in oklab, var(--neon) 35%, transparent);
+      background:#fff;
+    }
+
+    /* Buttons */
+    .btn{
+      appearance:none;border:0;border-radius:12px;
+      padding:12px 22px;font-weight:800;font-size:16px;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      cursor:pointer;transition:filter .15s ease, transform .02s ease-in-out;
+      user-select:none;touch-action:manipulation;
+    }
+    .btn.primary{ background:var(--neon); color:#000; }
+    .btn.secondary{ background:#111; color:#fff; font-weight:700; }
+    .btn:hover{ filter:brightness(.97) }
+    .btn:active{ transform:translateY(1px) }
+    .btn:focus-visible{ outline:3px solid var(--neon); outline-offset:2px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed }
+
+    .actions{ padding:24px 28px 28px; background:#fff; }
+
+    /* Status box: neutral white with neon edge for emphasis */
+    .status-box{
+      background:#fff;border:1px solid var(--stroke);
+      border-left:4px solid var(--neon);
+      border-radius:12px;padding:16px;margin:16px 0;display:none;
+    }
+    .status-box.show{ display:block }
+    .status-header{
+      font-size:.85rem;font-weight:800;color:var(--ink);
+      margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em
+    }
+    .status-row{
+      display:flex;justify-content:space-between;gap:12px;
+      padding:8px 0;border-bottom:1px solid var(--stroke)
+    }
+    .status-row:last-child{ border-bottom:none }
+    .status-label{ color:var(--muted);font-size:.9rem }
+    .status-value{ color:var(--ink);font-weight:700;font-size:.95rem }
+
+    .badge{
+      display:inline-block;padding:2px 10px;border-radius:999px;
+      font-size:.72rem;font-weight:800;letter-spacing:.04em
+    }
+    .badge.active{ background:#e7f7ea;color:#106b33 }
+    .badge.expired{ background:#fde6e8;color:#7a1121 }
+
+    /* Notifications */
+    .loading{ display:none;text-align:center;padding:20px;color:var(--muted) }
+    .loading.show{ display:block }
+    .result{ margin-top:12px;padding:12px;border-radius:10px;display:none;border:1px solid transparent }
+    .result.success{ background:#e8f7ee;border-color:#cdeeda;color:#106b33 }
+    .result.error{ background:#fdecee;border-color:#f6c9cf;color:#7a1121 }
+    .result.info{ background:#eaf4fb;border-color:#cbe6f7;color:#0c4f70 }
+
+    .card__footer{height:32px;background:var(--pink)}
+
+    /* Admin link styling */
+    .admin-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .15s ease;
+      margin-top: 8px;
+      display: inline-block;
+    }
+    .admin-link:hover {
+      color: var(--ink);
+      background: var(--tag);
+      text-decoration: none;
+    }
+
+    /* Data attribute styles to replace inline styles */
+    [data-style-margin-top="16px"] { margin-top: 16px; }
+    [data-style-margin-top="20px"] { margin-top: 20px; }
+    [data-style-display="flex"] { display: flex; }
+    [data-style-gap="10px"] { gap: 10px; }
+    [data-style-flex-wrap="wrap"] { flex-wrap: wrap; }
+    [data-style-align-items="flex-end"] { align-items: flex-end; }
+
+    /* Card dropdown styles */
+    .card-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1.5px solid var(--stroke);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+    
+    .dropdown-loading {
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+    }
+    
+    .card-option {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--stroke);
+      transition: background-color .15s ease;
+    }
+    
+    .card-option:last-child { border-bottom: none; }
+    .card-option:hover { background-color: var(--cream); }
+    .card-option.selected { background-color: var(--neon); color: #000; }
+    
+    .card-title { 
+      font-weight: 600; 
+      color: var(--ink); 
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .card-meta { 
+      font-size: 0.85rem; 
+      color: var(--muted); 
+    }
+    
+    .card-list { 
+      font-size: 0.75rem; 
+      background: var(--tag); 
+      padding: 2px 6px; 
+      border-radius: 4px; 
+      margin-left: 8px;
+    }
+
+    @media (max-width:768px){
+      .page{ padding:18px }
+      .grid{ grid-template-columns:1fr }
+      .form{ padding:12px 20px 24px }
+      .actions{ padding:16px 20px 24px }
+    }
+  </style>
+</head>
+<body class="page">
+  <div class="card">
+    <header class="card__header">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <img src="/assets/logo.png" alt="SHUREPRINT" class="logo">
+          <h1 class="title">Sales Rep Dashboard <span class="tag">Proof Management</span></h1>
+        </div>
+        <a href="/proof/admin/dashboard" class="admin-link">Admin Dashboard →</a>
+      </div>
+    </header>
+
+    <section class="meta">
+      <div class="row">
+        <span>Tool:</span><em class="token">Proof Link Manager</em>
+        <span class="stretch">Access Level:</span><em class="token">Sales Representative</em>
+      </div>
+    </section>
+
+    <section class="form">
+      <form id="proofForm">
+        <div class="grid">
+          <div>
+            <label class="label" for="proofId">Proof ID *</label>
+            <input type="text" id="proofId" name="proofId" placeholder="proof_1691234567890_abc123"
+                   required autocomplete="off" spellcheck="false">
+          </div>
+          <div>
+            <label class="label" for="salesRepEmail">Sales Rep Email *</label>
+            <input type="email" id="salesRepEmail" name="salesRepEmail" placeholder="john.doe@shureprint.com"
+                   required autocomplete="email" spellcheck="false">
+          </div>
+        </div>
+
+        <div data-style-margin-top="16px">
+          <button type="button" class="btn secondary" id="checkStatusBtn">Check Proof Status</button>
+        </div>
+
+        <div id="statusResult" class="status-box" aria-live="polite"></div>
+
+        <div class="grid" data-style-margin-top="20px">
+          <div>
+            <label class="label" for="extendDays">Extend Proof By</label>
+            <select id="extendDays" name="extendDays">
+              <option value="3">3 days</option>
+              <option value="7" selected>7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div data-style-display="flex" data-style-align-items="flex-end">
+            <button type="submit" class="btn primary">Refresh & Extend Proof</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="actions">
+      <div class="loading"><p>Processing request...</p></div>
+      <div id="result" class="result" aria-live="polite"></div>
+    </section>
+
+    <footer class="card__footer"></footer>
+  </div>
+
+  <script nonce="<%= locals.cspNonce %>">
+    /* ---------- helpers ---------- */
+    const $ = (sel) => document.querySelector(sel);
+
+    const escapeHTML = (s='') =>
+      String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    async function fetchJSON(url, opts = {}) {
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+      if (!res.ok) {
+        const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    function setPending(isPending) {
+      const form = $('#proofForm');
+      const loadingDiv = document.querySelector('.loading');
+      loadingDiv.classList.toggle('show', isPending);
+      [...form.elements].forEach(el => el.disabled = isPending && el.type !== 'hidden');
+    }
+
+    function showResult(message, type) {
+      const resultDiv = $('#result');
+      resultDiv.textContent = message;
+      resultDiv.className = `result ${type}`;
+      resultDiv.style.display = 'block';
+      
+      // Keep success messages visible longer, especially for proof extension confirmations
+      const duration = type === 'error' ? 10000 : (type === 'success' ? 15000 : 8000);
+      setTimeout(() => { resultDiv.style.display = 'none'; }, duration);
+    }
+
+    function validShureprintEmail(email) {
+      return /^[a-z0-9._%+-]+@shureprint\.com$/i.test(email.trim());
+    }
+
+    function msToParts(ms) {
+      if (ms <= 0) return { expired: true, text: 'Link expired' };
+      const d = Math.floor(ms / 86400000);
+      const h = Math.floor((ms % 86400000) / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      return { expired: false, text: `${d}d ${h}h ${m}m` };
+    }
+
+    /* ---------- submit: refresh & extend ---------- */
+    $('#proofForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const proofId = $('#proofId').value.trim();
+      const salesRepEmail = $('#salesRepEmail').value.trim();
+      const extendDays = parseInt($('#extendDays').value, 10);
+
+      if (!proofId || !salesRepEmail) return showResult('Please fill in all required fields.', 'error');
+      if (!validShureprintEmail(salesRepEmail)) return showResult('Email must be a valid @shureprint.com address.', 'error');
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true; submitBtn.textContent = 'Processing...';
+      setPending(true);
+
+      try {
+        // Get API key for authenticated requests
+        const apiKey = localStorage.getItem('shureprint_api_key') || prompt('Enter API Key (required for admin access):');
+        if (!apiKey) {
+          showResult('API Key required for admin access', 'error');
+          return;
+        }
+        localStorage.setItem('shureprint_api_key', apiKey);
+
+        const data = await fetchJSON(`/proof/admin/refresh/${encodeURIComponent(proofId)}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({ salesRepEmail, extendDays })
+        });
+
+        if (data && data.success) {
+          showResult(`✅ Proof extended ${extendDays} days. New expiration: ${data.newExpirationDate}`, 'success');
+          setTimeout(() => checkStatus(), 900);
+        } else {
+          showResult(`❌ ${data?.error || 'Failed to extend proof.'}`, 'error');
+        }
+      } catch (err) {
+        showResult(`❌ ${err.message}`, 'error');
+      } finally {
+        setPending(false);
+        submitBtn.disabled = false; submitBtn.textContent = 'Refresh & Extend Proof';
+      }
+    });
+
+    /* ---------- check status ---------- */
+    async function checkStatus() {
+      const proofId = $('#proofId').value.trim();
+      if (!proofId) return showResult('Please enter a Proof ID first.', 'error');
+
+      const statusDiv = $('#statusResult');
+      statusDiv.classList.remove('show');
+      setPending(true);
+
+      try {
+        // Get API key for authenticated requests
+        const apiKey = localStorage.getItem('shureprint_api_key') || prompt('Enter API Key (required for admin access):');
+        if (!apiKey) {
+          showResult('API Key required for admin access', 'error');
+          return;
+        }
+        localStorage.setItem('shureprint_api_key', apiKey);
+
+        const data = await fetchJSON(`/proof/admin/status/${encodeURIComponent(proofId)}`, {
+          headers: { 'x-api-key': apiKey }
+        });
+        const ms = Math.max(0, Number(data.timeRemainingMs) || 0);
+        const { expired, text } = msToParts(ms);
+        const statusClass = expired ? 'expired' : 'active';
+        const statusText  = expired ? 'EXPIRED' : 'ACTIVE';
+
+        statusDiv.innerHTML = `
+          <div class="status-header">Proof Status</div>
+          <div class="status-row">
+            <span class="status-label">Project:</span>
+            <span class="status-value">${escapeHTML(data.projectName || 'N/A')}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Art Proof #:</span>
+            <span class="status-value">${escapeHTML(data.artProofNumber || 'N/A')}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Customer:</span>
+            <span class="status-value">${escapeHTML(data.customerEmail || 'N/A')}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Status:</span>
+            <span class="status-value"><span class="badge ${statusClass}">${statusText}</span></span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Time Remaining:</span>
+            <span class="status-value">${text}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Created:</span>
+            <span class="status-value">${data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'N/A'}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Expires:</span>
+            <span class="status-value">${data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'N/A'}</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Customer Response:</span>
+            <span class="status-value">${data.hasResponse ? '✅ Received' : '⏳ Pending'}</span>
+          </div>
+        `;
+        statusDiv.classList.add('show');
+        showResult('Status loaded successfully', 'info');
+      } catch (err) {
+        showResult(`❌ ${err.message}`, 'error');
+      } finally {
+        setPending(false);
+      }
+    }
+
+    // Attach event listeners
+    document.getElementById('checkStatusBtn').addEventListener('click', checkStatus);
+  </script>
+</body>
+</html>

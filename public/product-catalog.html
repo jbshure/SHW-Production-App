@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Product Catalog – SHUREPRINT</title>
+
+  <!-- Brand typography -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --ink:#111111;
+      --text:#222222;
+      --muted:#6b6b6b;
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --cream:#FFF9F0;
+      --neon:#E3FF33;
+      --stroke:#e9e9e9;
+      --soft:#f7f7f7;
+      --radius:14px;
+      --radius-sm:10px;
+      --shadow:0 8px 28px rgba(0,0,0,.08);
+      --success:#28a745;
+      --error:#dc3545;
+      --warning:#ffc107;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      background:var(--bg);
+      color:var(--text);
+      font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      min-height:100%;
+    }
+
+    .container{max-width:1400px;margin:0 auto;padding:24px}
+
+    header{
+      background:var(--cream);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:18px 22px;
+      margin-bottom:24px;
+      box-shadow:var(--shadow);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    }
+    h1{color:var(--ink);font-size:28px;line-height:1.2;font-weight:800}
+
+    .admin-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .admin-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all .15s ease;
+    }
+    .admin-link:hover {
+      color: var(--ink);
+      background: var(--soft);
+    }
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+    .stat-card{background:#fff;border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .stat-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .stat-value{font-size:28px;font-weight:800;color:var(--ink)}
+    
+    /* Main content */
+    .main-content {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+    }
+    
+    /* Filters sidebar */
+    .filters-panel {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 20px;
+      height: fit-content;
+      box-shadow: var(--shadow);
+    }
+    .filter-section {
+      margin-bottom: 24px;
+    }
+    .filter-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .filter-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .filter-checkbox input {
+      cursor: pointer;
+    }
+    .filter-checkbox label {
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .filter-count {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    
+    /* Products grid */
+    .products-panel {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    
+    /* Search and controls */
+    .products-header {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border: 1.5px solid var(--stroke);
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+    }
+    .view-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--stroke);
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .view-btn.active {
+      background: var(--neon);
+      border-color: var(--neon);
+    }
+    
+    /* Grid view */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    .product-card {
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all .2s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      border-color: var(--neon);
+    }
+    .product-image-container {
+      width: 100%;
+      height: 200px;
+      background: #f5f5f5;
+      position: relative;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+    .product-info {
+      padding: 16px;
+    }
+    .product-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .product-sku {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .product-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .product-category {
+      display: inline-block;
+      padding: 4px 8px;
+      background: var(--soft);
+      border-radius: 4px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+    
+    /* Table view */
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .products-table th {
+      text-align: left;
+      padding: 12px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--stroke);
+    }
+    .products-table td {
+      padding: 12px 8px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .products-table tr:hover {
+      background: var(--cream);
+    }
+    
+    /* Action buttons */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-primary {
+      background: var(--neon);
+      color: #000;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    .btn-secondary {
+      background: #fff;
+      border: 1px solid var(--stroke);
+    }
+    .btn-secondary:hover {
+      background: var(--soft);
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--stroke);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .modal-body {
+      padding: 24px;
+    }
+    .modal-footer {
+      padding: 24px;
+      border-top: 1px solid var(--stroke);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    /* Form elements */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--stroke);
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(227, 255, 51, 0.2);
+    }
+    
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state h3 {
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    
+    /* Volume pricing table */
+    .volume-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .volume-table th {
+      background: var(--soft);
+      padding: 8px;
+      font-size: 12px;
+      text-align: left;
+    }
+    .volume-table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .volume-table input {
+      width: 100%;
+      padding: 4px 8px;
+      border: 1px solid var(--stroke);
+      border-radius: 4px;
+    }
+    
+    .price-tier {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--soft);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container with-sidebar">
+    <header>
+      <div>
+        <h1>Product Catalog</h1>
+      </div>
+      <div class="admin-nav">
+        <button class="btn btn-secondary" onclick="refreshProducts()">🔄 Refresh</button>
+        <button class="btn btn-secondary" onclick="openImportModal()">Import Excel</button>
+        <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+      </div>
+    </header>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value" id="total-products">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Products</div>
+        <div class="stat-value" id="active-products">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value" id="total-categories">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Suppliers</div>
+        <div class="stat-value" id="total-suppliers">0</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Filters Sidebar -->
+      <div class="filters-panel">
+        <div class="filter-section">
+          <div class="filter-title">Categories</div>
+          <div id="category-filters">
+            <!-- Categories will be loaded here -->
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <div class="filter-title">Suppliers</div>
+          <div id="supplier-filters">
+            <!-- Suppliers will be loaded here -->
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <div class="filter-title">Status</div>
+          <div class="filter-checkbox">
+            <input type="checkbox" id="filter-active">
+            <label for="filter-active">Active</label>
+          </div>
+          <div class="filter-checkbox">
+            <input type="checkbox" id="filter-draft">
+            <label for="filter-draft">Draft</label>
+          </div>
+          <div class="filter-checkbox">
+            <input type="checkbox" id="filter-archived">
+            <label for="filter-archived">Archived</label>
+          </div>
+        </div>
+        
+        <button class="btn btn-secondary" style="width: 100%;" onclick="clearFilters()">Clear Filters</button>
+      </div>
+
+      <!-- Products Panel -->
+      <div class="products-panel">
+        <div class="products-header">
+          <div class="search-box">
+            <span class="search-icon">⌕</span>
+            <input type="text" class="search-input" id="search-input" placeholder="Search products, SKUs, descriptions...">
+          </div>
+          <div class="view-toggle">
+            <button class="view-btn active" onclick="setView('grid')">Grid</button>
+            <button class="view-btn" onclick="setView('table')">Table</button>
+          </div>
+        </div>
+        
+        <!-- Products Container -->
+        <div id="products-container">
+          <div class="loading">Loading products...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Matrix Modal -->
+  <div id="pricingMatrixModal" class="modal" style="z-index: 2000;">
+    <div class="modal-content" style="max-width: 95%; width: 1200px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Pricing Matrix Configuration</h2>
+        <button class="modal-close" onclick="closePricingMatrix()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="pricingMatrixContainer">
+          <!-- Dynamic pricing matrix will be generated here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePricingMatrix()">Cancel</button>
+        <button class="btn btn-primary" onclick="savePricingMatrix()">Save Pricing</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Modal -->
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Add New Product</h2>
+        <button class="modal-close" onclick="closeProductModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="productForm">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label class="form-label">Product Name *</label>
+              <input type="text" class="form-input" id="productName" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">SKU</label>
+              <input type="text" class="form-input" id="productSku">
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-select" id="productCategory">
+                <option value="">Select Category</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Supplier</label>
+              <select class="form-select" id="productSupplier">
+                <option value="">Select Supplier</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="productDescription"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">E-commerce Description</label>
+            <textarea class="form-textarea" id="productEcommerceDesc"></textarea>
+          </div>
+          
+          <!-- Product Specifications Section -->
+          <div class="form-group">
+            <label class="form-label">Product Specifications</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Weight (oz)
+                  </label>
+                  <input type="number" id="productWeight" class="form-input" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Dimensions (L x W x H)
+                  </label>
+                  <input type="text" id="productDimensions" class="form-input" placeholder="e.g., 10 x 8 x 5">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Unit of Measure
+                  </label>
+                  <select id="productUOM" class="form-select">
+                    <option value="EA">Each</option>
+                    <option value="CS">Case</option>
+                    <option value="PK">Pack</option>
+                    <option value="DZ">Dozen</option>
+                    <option value="BX">Box</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Min Order Quantity
+                  </label>
+                  <input type="number" id="productMOQ" class="form-input" min="1" placeholder="1">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Lead Time (days)
+                  </label>
+                  <input type="number" id="productLeadTime" class="form-input" min="0" placeholder="e.g., 7">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Product Options Section -->
+          <div class="form-group">
+            <label class="form-label">Product Options & Variants</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <div id="productOptionsContainer">
+                <!-- Dynamic option groups will be added here -->
+              </div>
+              <button type="button" onclick="addProductOptionGroup()" class="btn btn-secondary" style="margin-top: 10px;">+ Add Option Group</button>
+            </div>
+          </div>
+          
+          <!-- Pricing Configuration Section -->
+          <div class="form-group">
+            <label class="form-label">Product Pricing</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <div id="pricingSummary" style="margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
+                <div style="font-size: 13px; color: #666;">
+                  <span id="pricingStatusText">No pricing configured</span>
+                </div>
+              </div>
+              
+              <button type="button" onclick="openPricingMatrix()" class="btn btn-primary" style="width: 100%;">
+                Configure All Pricing
+              </button>
+              <p style="font-size: 12px; color: #666; margin-top: 8px; margin-bottom: 0;">
+                Set base price, volume pricing, and option-based pricing all in one place
+              </p>
+            </div>
+          </div>
+          
+          <!-- Inventory & Fulfillment Section -->
+          <div class="form-group">
+            <label class="form-label">Inventory & Fulfillment</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Stock Quantity
+                  </label>
+                  <input type="number" id="stockQuantity" class="form-input" min="0" placeholder="0">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                    Reorder Point
+                  </label>
+                  <input type="number" id="reorderPoint" class="form-input" min="0" placeholder="0">
+                </div>
+              </div>
+              <div style="margin-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                  <input type="checkbox" id="trackInventory">
+                  Track inventory for this product
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 8px;">
+                  <input type="checkbox" id="allowBackorder">
+                  Allow backorders when out of stock
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Competitor Links Section -->
+          <div class="form-group">
+            <label class="form-label">Competitor Product Links</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <div id="competitorLinksContainer">
+                <!-- Dynamic competitor links will be added here -->
+              </div>
+              <button type="button" onclick="addCompetitorLink()" class="btn btn-secondary" style="margin-top: 10px;">+ Add Competitor Link</button>
+              <button type="button" onclick="autoFetchCompetitorPrices()" class="btn btn-primary" style="margin-top: 10px; margin-left: 10px;">
+                🔍 Auto-Fetch Prices
+              </button>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-select" id="productStatus">
+                <option value="Active">Active</option>
+                <option value="Draft">Draft</option>
+                <option value="Archived">Archived</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Product Image</label>
+              <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 10px; background: var(--soft);">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                  <button type="button" class="btn btn-secondary" onclick="selectImageMode('url')" id="urlModeBtn" style="flex: 1;">URL</button>
+                  <button type="button" class="btn btn-secondary" onclick="selectImageMode('upload')" id="uploadModeBtn" style="flex: 1;">Upload</button>
+                </div>
+                
+                <div id="imageUrlMode" style="display: block;">
+                  <input type="url" class="form-input" id="productImage" placeholder="https://..." onblur="previewUrlImage()">
+                </div>
+                
+                <div id="imageUploadMode" style="display: none;">
+                  <input type="file" id="productImageFile" accept="image/*" onchange="handleImageUpload(event)" style="display: none;">
+                  <button type="button" class="btn btn-secondary" onclick="document.getElementById('productImageFile').click()" style="width: 100%;">
+                    Choose Image File
+                  </button>
+                  <div id="uploadedImageName" style="margin-top: 8px; font-size: 12px; color: #666;"></div>
+                </div>
+                
+                <div id="imagePreview" style="margin-top: 10px; display: none;">
+                  <img id="previewImg" style="max-width: 100%; max-height: 200px; border-radius: 6px;" alt="Product preview">
+                  <button type="button" class="btn btn-secondary" onclick="clearImage()" style="margin-top: 8px; font-size: 12px;">Remove Image</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tags & Keywords Section -->
+          <div class="form-group">
+            <label class="form-label">Tags & Keywords</label>
+            <div style="border: 1px solid var(--stroke); border-radius: 8px; padding: 15px; background: var(--soft);">
+              <input type="text" id="productTags" class="form-input" placeholder="Enter tags separated by commas (e.g., eco-friendly, recyclable, custom)">
+              <p style="font-size: 12px; color: #666; margin-top: 8px; margin-bottom: 0;">
+                Tags help with product search and categorization
+              </p>
+            </div>
+          </div>
+          
+          <!-- Production Notes Section -->
+          <div class="form-group">
+            <label class="form-label">Production & Internal Notes</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                  Production Notes
+                </label>
+                <textarea id="productionNotes" class="form-textarea" placeholder="Special production instructions or requirements" style="min-height: 80px;"></textarea>
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px;">
+                  Internal Notes
+                </label>
+                <textarea id="internalNotes" class="form-textarea" placeholder="Notes for internal use only" style="min-height: 80px;"></textarea>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Excel Import Modal -->
+  <div id="importModal" class="modal">
+    <div class="modal-content" style="max-width: 95%; width: 1200px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Import Products from Excel</h2>
+        <button class="modal-close" onclick="closeImportModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="importStep1" style="display: block;">
+          <div style="text-align: center; padding: 40px; border: 2px dashed var(--stroke); border-radius: 12px; background: var(--soft);">
+            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)" style="display: none;">
+            <h3 style="margin-bottom: 15px;">Upload Excel or CSV File</h3>
+            <p style="color: #666; margin-bottom: 20px;">Select a file containing product data to import</p>
+            <button class="btn btn-primary" onclick="document.getElementById('excelFile').click()">
+              Choose File
+            </button>
+            <div id="uploadedFileName" style="margin-top: 15px; font-weight: 600; color: #28a745;"></div>
+          </div>
+          
+          <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h4 style="margin-bottom: 15px;">Expected Excel Format:</h4>
+            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Your Excel file should have column headers in the first row. Common columns include:</p>
+            <ul style="font-size: 13px; color: #666; list-style: none; padding: 0;">
+              <li>• Product Name (required)</li>
+              <li>• SKU</li>
+              <li>• Description</li>
+              <li>• Category</li>
+              <li>• Price / Base Price</li>
+              <li>• Setup Fee</li>
+              <li>• Min Quantity / MOQ</li>
+              <li>• Stock Quantity</li>
+              <li>• Image URL</li>
+              <li>• Status (Active/Draft/Archived)</li>
+            </ul>
+            <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top: 15px;">
+              Download Template
+            </button>
+          </div>
+        </div>
+        
+        <div id="importStep2" style="display: none;">
+          <h3 style="margin-bottom: 20px;">Map Excel Columns to Product Fields</h3>
+          <div id="columnMappingContainer" style="max-height: 400px; overflow-y: auto;">
+            <!-- Column mapping will be generated here -->
+          </div>
+          
+          <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+            <strong>Preview:</strong> <span id="previewCount">0</span> products will be imported
+          </div>
+        </div>
+        
+        <div id="importStep3" style="display: none;">
+          <h3 style="margin-bottom: 20px;">Import Progress</h3>
+          <div id="importProgress" style="padding: 20px;">
+            <div style="width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden;">
+              <div id="progressBar" style="width: 0%; height: 100%; background: var(--neon); transition: width 0.3s;"></div>
+            </div>
+            <p id="progressText" style="margin-top: 10px; text-align: center;">Importing...</p>
+          </div>
+          
+          <div id="importResults" style="display: none; margin-top: 20px;">
+            <h4>Import Complete!</h4>
+            <p><span id="successCount">0</span> products imported successfully</p>
+            <p><span id="errorCount">0</span> errors occurred</p>
+            <div id="errorDetails" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+        <button id="importBackBtn" class="btn btn-secondary" onclick="importBack()" style="display: none;">Back</button>
+        <button id="importNextBtn" class="btn btn-primary" onclick="importNext()" style="display: none;">Next</button>
+        <button id="importBtn" class="btn btn-primary" onclick="startImport()" style="display: none;">Import Products</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Competitor Price Comparison Modal -->
+  <div id="priceComparisonModal" class="modal">
+    <div class="modal-content" style="max-width: 90%; width: 1100px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Price Comparison Analysis</h2>
+        <button class="modal-close" onclick="closePriceComparison()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="comparisonProductInfo" style="margin-bottom: 20px; padding: 15px; background: var(--soft); border-radius: 8px;">
+          <h3 id="comparisonProductName" style="margin-bottom: 8px;">Product Name</h3>
+          <p id="comparisonProductSKU" style="color: var(--muted); margin: 0;">SKU: -</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+          <!-- Price Summary Card -->
+          <div style="background: var(--cream); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
+            <h4 style="margin-bottom: 15px; color: var(--ink);">Price Position</h4>
+            <div style="text-align: center; margin: 20px 0;">
+              <div id="pricePositionBadge" style="display: inline-block; padding: 8px 16px; background: var(--neon); border-radius: 20px; font-weight: 700; font-size: 14px;">
+                Loading...
+              </div>
+            </div>
+            <div style="margin-top: 20px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: var(--muted);">Our Price:</span>
+                <span id="ourPriceDisplay" style="font-weight: 700; color: var(--ink);">$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: var(--muted);">Market Avg:</span>
+                <span id="marketAvgDisplay" style="font-weight: 600;">$0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: var(--muted);">Difference:</span>
+                <span id="priceDiffDisplay" style="font-weight: 600;">0%</span>
+              </div>
+            </div>
+            <div id="priceRecommendation" style="margin-top: 20px; padding: 12px; background: #fff; border-radius: 8px; font-size: 13px; color: var(--text);">
+              Loading recommendation...
+            </div>
+          </div>
+          
+          <!-- Competitor Prices Table -->
+          <div>
+            <h4 style="margin-bottom: 15px; color: var(--ink);">Competitor Prices</h4>
+            <div id="competitorPricesContainer">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--stroke);">
+                    <th style="text-align: left; padding: 10px; font-size: 12px; color: var(--muted);">COMPETITOR</th>
+                    <th style="text-align: right; padding: 10px; font-size: 12px; color: var(--muted);">PRICE</th>
+                    <th style="text-align: center; padding: 10px; font-size: 12px; color: var(--muted);">DIFFERENCE</th>
+                    <th style="text-align: center; padding: 10px; font-size: 12px; color: var(--muted);">CONFIDENCE</th>
+                    <th style="text-align: center; padding: 10px; font-size: 12px; color: var(--muted);">LAST UPDATED</th>
+                  </tr>
+                </thead>
+                <tbody id="competitorPricesList">
+                  <!-- Competitor prices will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 12px;">
+              <button class="btn btn-secondary" onclick="refreshCompetitorPrices()">
+                🔄 Refresh Prices
+              </button>
+              <button class="btn btn-secondary" onclick="exportPriceComparison()">
+                📊 Export Report
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Price History Chart -->
+        <div style="margin-top: 30px; padding: 20px; background: #fff; border: 1px solid var(--stroke); border-radius: 12px;">
+          <h4 style="margin-bottom: 15px; color: var(--ink);">Price History (Last 30 Days)</h4>
+          <canvas id="priceHistoryChart" width="400" height="150"></canvas>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePriceComparison()">Close</button>
+        <button class="btn btn-primary" onclick="updateProductPricing()">Update Our Price</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- SheetJS for Excel parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.1/dist/xlsx.full.min.js"></script>
+  
+  <!-- Chart.js for price history visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Competitor Price Scraper -->
+  <script src="competitor-scraper.js"></script>
+  
+  <!-- Supabase Configuration -->
+  <script src="supabase-config.js"></script>
+  
+  <!-- Product Catalog JavaScript -->
+  <script>
+    // Wait for Supabase to load before loading product catalog
+    function loadProductCatalog() {
+      if (typeof window.supabase !== 'undefined' && window.SUPABASE_CONFIG) {
+        // Load product loader first
+        console.log('Loading product-loader.js...');
+        const loaderScript = document.createElement('script');
+        loaderScript.src = 'product-loader.js?v=' + Date.now();
+        loaderScript.onload = function() {
+          console.log('product-loader.js loaded successfully');
+          
+          // Then load the main catalog
+          console.log('Loading product-catalog.js...');
+          const script = document.createElement('script');
+          script.src = 'product-catalog.js?v=' + Date.now();
+          script.onload = function() {
+            console.log('product-catalog.js loaded successfully');
+          };
+          document.body.appendChild(script);
+        };
+        document.body.appendChild(loaderScript);
+      } else {
+        console.log('Waiting for dependencies...');
+        setTimeout(loadProductCatalog, 100);
+      }
+    }
+    
+    // Start loading after a short delay
+    window.addEventListener('load', function() {
+      loadProductCatalog();
+    });
+  </script>
+  <script src="/shared-navigation.js"></script>
+</body>
+</html>

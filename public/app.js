@@ -2,8 +2,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Get environment variables (Vite automatically loads these)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = 'https://ifyjjvbqmyyuhzpoxlsl.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmeWpqdmJxbXl5dWh6cG94bHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3OTUzMjksImV4cCI6MjA3MDM3MTMyOX0.yXS4pbap1yVfhidFCN4MZkZE4lbkF5yS9V-nR88V1kc'
 
 // Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -381,14 +381,14 @@ function getStatusColor(status) {
     }
 }
 
-// Override the existing autoSave function to use Supabase
+// Override the existing autoSave function to use Airtable
 const originalAutoSave = window.autoSave;
 window.autoSave = async function() {
     if (!window.isDirty) return;
     
     try {
-        // Save to Supabase
-        await saveQuoteToSupabase();
+        // Save to Airtable
+        await saveQuoteToAirtable();
         
         // Call original auto-save UI updates
         if (originalAutoSave) {
@@ -409,18 +409,19 @@ window.autoSave = async function() {
         
     } catch (error) {
         console.error("Auto-save failed:", error);
+        // Don't show error notifications for auto-save failures to avoid spam
     }
 };
 
-// Override sendToCustomer to include Supabase saving
+// Override sendToCustomer to include Airtable saving
 const originalSendToCustomer = window.sendToCustomer;
 window.sendToCustomer = async function() {
     try {
-        // Save to Supabase first
-        await saveQuoteToSupabase();
+        // Save to Airtable first
+        await saveQuoteToAirtable();
         
-        // Mark as sent
-        await markQuoteAsSent();
+        // Mark as sent in Airtable
+        await markQuoteAsSentInAirtable();
         
         // Call original send function
         if (originalSendToCustomer) {
@@ -433,11 +434,54 @@ window.sendToCustomer = async function() {
     }
 };
 
+// Mark quote as sent in Airtable
+window.markQuoteAsSentInAirtable = async function() {
+    if (!window.currentQuoteId) {
+        await saveQuoteToAirtable(); // Save first if new
+    }
+    
+    try {
+        const AIRTABLE_API_KEY = window.API_CONFIG?.AIRTABLE?.API_KEY;
+        const AIRTABLE_BASE_ID = window.API_CONFIG?.AIRTABLE?.BASE_ID;
+        
+        const response = await fetch(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Quotes/${window.currentQuoteId}`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    fields: {
+                        'Status': 'Sent',
+                        'Sent_Date': new Date().toISOString()
+                    }
+                })
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error(`Failed to update status: ${response.status}`);
+        }
+        
+        showNotification("Quote marked as sent! 📧");
+        
+        // Update UI
+        document.getElementById('statusIndicator').innerHTML = '📧 Sent';
+        document.getElementById('statusIndicator').style.background = 'var(--warning-color)';
+        
+    } catch (error) {
+        console.error("Error updating quote status:", error);
+        showNotification("Error updating quote: " + error.message, 'error');
+    }
+};
+
 // Load recent quotes when page loads
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for the original DOM content to load first
     setTimeout(() => {
-        loadRecentQuotes();
+        loadRecentQuotesFromAirtable();
     }, 1000);
 });
 

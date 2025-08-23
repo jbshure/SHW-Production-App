@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Price Comparison Tool - SHUREPRINT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .product-input {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .input-group {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 15px;
+      align-items: end;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-add {
+      background: #28a745;
+      color: white;
+      margin-top: 15px;
+    }
+    .comparison-table {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #dee2e6;
+      position: sticky;
+      top: 0;
+    }
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #e9ecef;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .competitor-name {
+      font-weight: 600;
+      color: #495057;
+    }
+    .price-input {
+      width: 120px;
+      font-weight: 600;
+    }
+    .link-input {
+      width: 100%;
+      font-size: 14px;
+    }
+    .price-difference {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .cheaper {
+      background: #d4edda;
+      color: #155724;
+    }
+    .more-expensive {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .same {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .summary-item {
+      text-align: center;
+    }
+    .summary-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .summary-label {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .notes-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .notes-textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      min-height: 100px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💰 Price Comparison Tool</h1>
+      <div class="subtitle">Compare your prices with competitors instantly</div>
+    </div>
+    
+    <div class="content">
+      <!-- Product Selection -->
+      <div class="product-input">
+        <div class="input-group">
+          <div>
+            <label>Product Name</label>
+            <input type="text" id="productName" placeholder="e.g., Business Cards 500 qty">
+          </div>
+          <div>
+            <label>Your Price</label>
+            <input type="number" id="ourPrice" placeholder="0.00" step="0.01">
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="addComparison()">+ Add Competitor</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Comparison Table -->
+      <div class="comparison-table">
+        <table id="comparisonTable">
+          <thead>
+            <tr>
+              <th>Competitor</th>
+              <th>Their Price</th>
+              <th>Link/Notes</th>
+              <th>Difference</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonBody">
+            <!-- Rows will be added here -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Summary -->
+      <div class="summary-card" id="summaryCard" style="display: none;">
+        <div class="summary-item">
+          <div class="summary-value" id="avgCompetitorPrice">$0</div>
+          <div class="summary-label">Average Competitor Price</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="yourPosition">-</div>
+          <div class="summary-label">Your Position</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="priceDifference">$0</div>
+          <div class="summary-label">vs Average</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="recommendedPrice">$0</div>
+          <div class="summary-label">Recommended Price</div>
+        </div>
+      </div>
+      
+      <!-- Notes Section -->
+      <div class="notes-section">
+        <label>Analysis Notes</label>
+        <textarea class="notes-textarea" id="analysisNotes" placeholder="Add notes about pricing strategy, competitor advantages, etc."></textarea>
+      </div>
+      
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn btn-primary" onclick="saveComparison()">💾 Save Comparison</button>
+        <button class="btn btn-secondary" onclick="exportToExcel()">📊 Export to Excel</button>
+        <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let comparisons = [];
+    let comparisonId = 0;
+
+    // Popular competitors preset
+    const competitors = [
+      'Vistaprint',
+      'Printful',
+      'GotPrint',
+      'UPrinting',
+      'PsPrint',
+      'Moo',
+      '4OVER4',
+      'Staples',
+      'FedEx Office',
+      'Custom'
+    ];
+
+    function addComparison() {
+      const tbody = document.getElementById('comparisonBody');
+      const row = document.createElement('tr');
+      const id = ++comparisonId;
+      
+      row.innerHTML = `
+        <td>
+          <select class="form-select" id="competitor-${id}" onchange="updateComparison(${id})">
+            <option value="">Select Competitor</option>
+            ${competitors.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="number" class="price-input" id="price-${id}" 
+                 placeholder="0.00" step="0.01" onchange="updateComparison(${id})">
+        </td>
+        <td>
+          <input type="url" class="link-input" id="link-${id}" 
+                 placeholder="https://competitor.com/product">
+        </td>
+        <td id="diff-${id}">-</td>
+        <td>
+          <button class="btn btn-secondary" onclick="removeComparison(${id})">Remove</button>
+        </td>
+      `;
+      
+      tbody.appendChild(row);
+      comparisons.push({ id });
+    }
+
+    function removeComparison(id) {
+      const row = document.querySelector(`#competitor-${id}`).closest('tr');
+      row.remove();
+      comparisons = comparisons.filter(c => c.id !== id);
+      updateSummary();
+    }
+
+    function updateComparison(id) {
+      const ourPrice = parseFloat(document.getElementById('ourPrice').value) || 0;
+      const theirPrice = parseFloat(document.getElementById(`price-${id}`).value) || 0;
+      const diffCell = document.getElementById(`diff-${id}`);
+      
+      if (ourPrice && theirPrice) {
+        const diff = ourPrice - theirPrice;
+        const percent = ((diff / theirPrice) * 100).toFixed(1);
+        
+        if (diff < 0) {
+          diffCell.innerHTML = `<span class="price-difference cheaper">$${Math.abs(diff).toFixed(2)} cheaper (${Math.abs(percent)}%)</span>`;
+        } else if (diff > 0) {
+          diffCell.innerHTML = `<span class="price-difference more-expensive">$${diff.toFixed(2)} more (${percent}%)</span>`;
+        } else {
+          diffCell.innerHTML = `<span class="price-difference same">Same price</span>`;
+        }
+      }
+      
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const ourPrice = parseFloat(document.getElementById('ourPrice').value) || 0;
+      const prices = [];
+      
+      comparisons.forEach(c => {
+        const price = parseFloat(document.getElementById(`price-${c.id}`).value);
+        if (price) prices.push(price);
+      });
+      
+      if (prices.length > 0 && ourPrice) {
+        const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+        const sorted = [...prices, ourPrice].sort((a, b) => a - b);
+        const position = sorted.indexOf(ourPrice) + 1;
+        const diff = ourPrice - avg;
+        
+        // Calculate recommended price (slightly below average for competitiveness)
+        const recommended = avg * 0.95; // 5% below average
+        
+        document.getElementById('avgCompetitorPrice').textContent = `$${avg.toFixed(2)}`;
+        document.getElementById('yourPosition').textContent = `#${position} of ${sorted.length}`;
+        document.getElementById('priceDifference').textContent = `${diff >= 0 ? '+' : ''}$${diff.toFixed(2)}`;
+        document.getElementById('recommendedPrice').textContent = `$${recommended.toFixed(2)}`;
+        
+        document.getElementById('summaryCard').style.display = 'grid';
+      } else {
+        document.getElementById('summaryCard').style.display = 'none';
+      }
+    }
+
+    function saveComparison() {
+      const data = {
+        product: document.getElementById('productName').value,
+        ourPrice: document.getElementById('ourPrice').value,
+        comparisons: comparisons.map(c => ({
+          competitor: document.getElementById(`competitor-${c.id}`).value,
+          price: document.getElementById(`price-${c.id}`).value,
+          link: document.getElementById(`link-${c.id}`).value
+        })),
+        notes: document.getElementById('analysisNotes').value,
+        date: new Date().toISOString()
+      };
+      
+      // Save to localStorage
+      const saved = JSON.parse(localStorage.getItem('priceComparisons') || '[]');
+      saved.push(data);
+      localStorage.setItem('priceComparisons', JSON.stringify(saved));
+      
+      alert('✅ Comparison saved successfully!');
+    }
+
+    function exportToExcel() {
+      const data = [
+        ['Product', document.getElementById('productName').value],
+        ['Our Price', document.getElementById('ourPrice').value],
+        [''],
+        ['Competitor', 'Price', 'Link']
+      ];
+      
+      comparisons.forEach(c => {
+        data.push([
+          document.getElementById(`competitor-${c.id}`).value,
+          document.getElementById(`price-${c.id}`).value,
+          document.getElementById(`link-${c.id}`).value
+        ]);
+      });
+      
+      // Create CSV
+      const csv = data.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `price-comparison-${Date.now()}.csv`;
+      a.click();
+    }
+
+    function clearAll() {
+      if (confirm('Clear all data?')) {
+        document.getElementById('productName').value = '';
+        document.getElementById('ourPrice').value = '';
+        document.getElementById('comparisonBody').innerHTML = '';
+        document.getElementById('analysisNotes').value = '';
+        comparisons = [];
+        updateSummary();
+      }
+    }
+
+    // Load saved comparisons on startup
+    window.addEventListener('load', () => {
+      const saved = JSON.parse(localStorage.getItem('priceComparisons') || '[]');
+      if (saved.length > 0) {
+        console.log(`Found ${saved.length} saved comparisons`);
+      }
+    });
+  </script>
+</body>
+</html>

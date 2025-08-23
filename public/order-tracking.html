@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking Management - ShurePrint Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #ffffff;
+            --accent-color: #e3fc02;
+            --neon: #E3FF33;
+            --text-primary: #000000;
+            --text-secondary: #666;
+            --text-light: #999;
+            --border-color: #e0e0e0;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --background-light: #fff;
+            --background-gray: #f8f9fa;
+            --cream: #FFF9F0;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,.15);
+            --ink: #111111;
+            --muted: #6b6b6b;
+            --stroke: #e9e9e9;
+            --soft: #f7f7f7;
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, #f8f9fa 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background-color: var(--cream) !important;
+            border-bottom: 1px solid var(--stroke);
+            box-shadow: var(--shadow-sm);
+            padding: 18px 22px;
+        }
+
+        .navbar-brand {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: var(--ink) !important;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        /* Main content wrapper */
+        .main-content {
+            min-height: 100vh;
+            max-width: 100%;
+            padding: 20px;
+        }
+
+
+        .card {
+            border: 1px solid var(--stroke);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            background: var(--background-light);
+        }
+
+        .card-header {
+            background-color: var(--soft);
+            color: var(--ink);
+            font-weight: 600;
+            border-bottom: 1px solid var(--stroke);
+            border-radius: var(--radius) var(--radius) 0 0 !important;
+            padding: 16px 20px;
+        }
+
+        .order-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            border-radius: var(--radius-sm);
+        }
+
+        .order-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+        }
+
+        .order-card.selected {
+            border: 2px solid var(--accent-color);
+            background-color: var(--cream);
+            box-shadow: 0 0 0 4px rgba(227, 252, 2, 0.1);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-confirmed { background-color: #17a2b8; color: #fff; }
+        .status-sampling { background-color: #6f42c1; color: #fff; }
+        .status-in_production { background-color: #e83e8c; color: #fff; }
+        .status-finishing { background-color: #fd7e14; color: #fff; }
+        .status-quality_check { background-color: #6610f2; color: #fff; }
+        .status-shipping { background-color: #28a745; color: #fff; }
+        .status-out_for_delivery { background-color: #20c997; color: #fff; }
+        .status-delivered { background-color: #6c757d; color: #fff; }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #dee2e6;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--stroke);
+        }
+
+        .tracking-input {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: var(--ink);
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--neon);
+            border-color: var(--neon);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--ink);
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .stats-card .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stats-card .stat-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        #loadingSpinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content" id="mainContent">
+        <div class="container-fluid">
+            <!-- Main Content -->
+            <div class="p-4">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 style="font-size: 2.5rem; font-weight: 700;"><i class="bi bi-truck"></i> Order Tracking Management</h1>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary me-2" onclick="syncAllTracking()">
+                            <i class="bi bi-arrow-repeat"></i> Sync All Tracking
+                        </button>
+                        <button class="btn btn-primary" onclick="showAddOrderModal()">
+                            <i class="bi bi-plus-circle"></i> Add Order
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <div class="stat-number" id="totalOrders">0</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <div class="stat-number" id="inProduction">0</div>
+                            <div class="stat-label">In Production</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <div class="stat-number" id="shipping">0</div>
+                            <div class="stat-label">Shipping</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stats-card">
+                            <div class="stat-number" id="delivered">0</div>
+                            <div class="stat-label">Delivered</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Orders List -->
+                    <div class="col-md-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-list-ul"></i> Orders
+                                <input type="text" class="form-control form-control-sm float-end w-50" 
+                                       id="searchOrders" placeholder="Search orders...">
+                            </div>
+                            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                                <div id="ordersList">
+                                    <!-- Orders will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Details & Update Form -->
+                    <div class="col-md-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-pencil-square"></i> Update Order
+                            </div>
+                            <div class="card-body">
+                                <div id="orderUpdateForm">
+                                    <p class="text-muted text-center">Select an order to update</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="bi bi-clock-history"></i> Order Timeline
+                            </div>
+                            <div class="card-body">
+                                <div id="orderTimeline">
+                                    <p class="text-muted text-center">Select an order to view timeline</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Order Modal -->
+    <div class="modal fade" id="addOrderModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addOrderForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Order ID</label>
+                                <input type="text" class="form-control" id="newOrderId" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer Email</label>
+                                <input type="email" class="form-control" id="newCustomerEmail" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="newProductName" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="newQuantity" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">SKU</label>
+                                <input type="text" class="form-control" id="newSku">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Transport Mode</label>
+                                <select class="form-control" id="newTransportMode">
+                                    <option value="third_party">Third Party Shipping</option>
+                                    <option value="in_house">Local Delivery</option>
+                                    <option value="pickup">Customer Pickup</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Special Instructions</label>
+                            <textarea class="form-control" id="newSpecialInstructions" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewOrder()">Add Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration - Replace with your actual config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <!-- Use simple version for now, switch to order-tracking.js when Firebase is configured -->
+    <script src="/order-tracking-simple.js"></script>
+    <script src="/shared-navigation.js"></script>
+</body>
+</html>
