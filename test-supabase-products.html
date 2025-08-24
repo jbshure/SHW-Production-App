@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Products Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Products Test</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://elvbmvbbsymrcktvfbbk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsdmJtdmJic3ltcmNrdHZmYmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMjQ5NDksImV4cCI6MjA3MDgwMDk0OX0.hl2wdP8yvrlvyahqBG9q9f-mVlk4CEg1a7jn1ve-bXI';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testConnection() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing connection...</p>';
+
+            try {
+                // Test basic connection
+                const { data: products, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .limit(5);
+
+                if (error) {
+                    resultsDiv.innerHTML = `
+                        <h3>Error:</h3>
+                        <p style="color: red;">${error.message}</p>
+                        <p>Code: ${error.code}</p>
+                    `;
+                    return;
+                }
+
+                resultsDiv.innerHTML = `
+                    <h3>Products Table Test:</h3>
+                    <p><strong>Found ${products.length} products</strong></p>
+                    <pre>${JSON.stringify(products, null, 2)}</pre>
+                `;
+
+                // Test suppliers table
+                const { data: suppliers, error: suppliersError } = await supabase
+                    .from('suppliers')
+                    .select('*');
+
+                if (suppliersError) {
+                    resultsDiv.innerHTML += `
+                        <h3>Suppliers Table Error:</h3>
+                        <p style="color: red;">${suppliersError.message}</p>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <h3>Suppliers Table Test:</h3>
+                        <p><strong>Found ${suppliers.length} suppliers</strong></p>
+                        <pre>${JSON.stringify(suppliers, null, 2)}</pre>
+                    `;
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <h3>Connection Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Management | SHW Production</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="navigation-placeholder"></div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Supplier Management</h1>
+            <button onclick="showAddSupplierModal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                + Add New Supplier
+            </button>
+        </div>
+
+        <!-- Suppliers Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incoterm</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Rate Cards</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="suppliersTable" class="bg-white divide-y divide-gray-200">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rate Cards Section -->
+        <div id="rateCardsSection" class="mt-8 bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Rate Cards for <span id="supplierName"></span></h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Family</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Base Rates</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Freight</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rateCardsTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pricing Rules Section -->
+        <div id="pricingRulesSection" class="mt-8 bg-white rounded-lg shadow-md p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Pricing Rules</h2>
+                <button onclick="showAddRuleModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    + Add Rule
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Condition</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pricingRulesTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Supplier Modal -->
+    <div id="addSupplierModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4">Add New Supplier</h3>
+            <form id="addSupplierForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Supplier Name</label>
+                    <input type="text" id="newSupplierName" required class="w-full border rounded px-3 py-2">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                    <select id="newSupplierCurrency" class="w-full border rounded px-3 py-2">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="CNY">CNY</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Incoterm</label>
+                    <select id="newSupplierIncoterm" class="w-full border rounded px-3 py-2">
+                        <option value="FOB">FOB</option>
+                        <option value="EXW">EXW</option>
+                        <option value="CIF">CIF</option>
+                        <option value="DDP">DDP</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Supplier</button>
+                    <button type="button" onclick="hideAddSupplierModal()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Pricing Rule Modal -->
+    <div id="addRuleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-lg">
+            <h3 class="text-xl font-semibold mb-4">Add Pricing Rule</h3>
+            <form id="addRuleForm">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Supplier (Optional)</label>
+                        <select id="ruleSupplier" class="w-full border rounded px-3 py-2">
+                            <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Family (Optional)</label>
+                        <select id="ruleFamily" class="w-full border rounded px-3 py-2">
+                            <option value="">All Families</option>
+                            <option value="bag">Bag</option>
+                            <option value="cup">Cup</option>
+                            <option value="carton">Carton</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Condition (JSON)</label>
+                    <textarea id="ruleCondition" rows="3" class="w-full border rounded px-3 py-2 font-mono text-sm" 
+                              placeholder='{"attrs.material": {"eq": "plastic"}}'></textarea>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                        <select id="ruleAction" class="w-full border rounded px-3 py-2">
+                            <option value="adder">Adder</option>
+                            <option value="multiplier">Multiplier</option>
+                            <option value="override">Override</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Basis</label>
+                        <select id="ruleBasis" class="w-full border rounded px-3 py-2">
+                            <option value="per_unit">Per Unit</option>
+                            <option value="per_m2">Per m²</option>
+                            <option value="per_kg">Per kg</option>
+                            <option value="per_order">Per Order</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Value</label>
+                        <input type="number" id="ruleValue" step="0.01" required class="w-full border rounded px-3 py-2">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <input type="text" id="ruleNotes" class="w-full border rounded px-3 py-2">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Rule</button>
+                    <button type="button" onclick="hideAddRuleModal()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script src="shared-navigation.js"></script>
+    <script>
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadSuppliers();
+            await loadPricingRules();
+            setupEventListeners();
+        });
+
+        // Load suppliers
+        async function loadSuppliers() {
+            try {
+                const { data: suppliers, error } = await supabase
+                    .from('suppliers')
+                    .select(`
+                        *,
+                        supplier_rate_cards (
+                            family,
+                            active
+                        )
+                    `)
+                    .order('name');
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('suppliersTable');
+                tbody.innerHTML = '';
+                
+                suppliers.forEach(supplier => {
+                    const activeCards = supplier.supplier_rate_cards?.filter(rc => rc.active) || [];
+                    const families = [...new Set(activeCards.map(rc => rc.family))];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap font-medium">${supplier.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${supplier.currency}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${supplier.incoterm}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm">${families.join(', ') || 'None'}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="viewRateCards('${supplier.id}', '${supplier.name}')" 
+                                    class="text-blue-600 hover:text-blue-900 mr-3">Rate Cards</button>
+                            <button onclick="editSupplier('${supplier.id}')" 
+                                    class="text-green-600 hover:text-green-900 mr-3">Edit</button>
+                            <button onclick="deleteSupplier('${supplier.id}')" 
+                                    class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Update rule supplier dropdown
+                const ruleSupplierSelect = document.getElementById('ruleSupplier');
+                ruleSupplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+                suppliers.forEach(supplier => {
+                    const option = document.createElement('option');
+                    option.value = supplier.id;
+                    option.textContent = supplier.name;
+                    ruleSupplierSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading suppliers:', error);
+            }
+        }
+
+        // View rate cards for a supplier
+        async function viewRateCards(supplierId, supplierName) {
+            try {
+                const { data: rateCards, error } = await supabase
+                    .from('supplier_rate_cards')
+                    .select('*')
+                    .eq('supplier_id', supplierId)
+                    .order('family');
+                
+                if (error) throw error;
+                
+                document.getElementById('supplierName').textContent = supplierName;
+                const tbody = document.getElementById('rateCardsTable');
+                tbody.innerHTML = '';
+                
+                rateCards.forEach(card => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${card.family}</td>
+                        <td class="px-6 py-4 text-xs">
+                            <pre>${JSON.stringify(card.base, null, 2)}</pre>
+                        </td>
+                        <td class="px-6 py-4 text-xs">
+                            <pre>${JSON.stringify(card.freight, null, 2)}</pre>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">${(card.duty * 100).toFixed(1)}%</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${card.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                ${card.active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <button onclick="toggleRateCard('${card.id}', ${!card.active})" 
+                                    class="text-blue-600 hover:text-blue-900">
+                                ${card.active ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                document.getElementById('rateCardsSection').classList.remove('hidden');
+                document.getElementById('pricingRulesSection').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error loading rate cards:', error);
+            }
+        }
+
+        // Load pricing rules
+        async function loadPricingRules() {
+            try {
+                const { data: rules, error } = await supabase
+                    .from('pricing_rules')
+                    .select(`
+                        *,
+                        suppliers (name)
+                    `)
+                    .order('priority')
+                    .order('id');
+                
+                if (error) throw error;
+                
+                const tbody = document.getElementById('pricingRulesTable');
+                tbody.innerHTML = '';
+                
+                rules.forEach(rule => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-2 text-xs">
+                            <pre>${JSON.stringify(rule.condition, null, 2)}</pre>
+                        </td>
+                        <td class="px-4 py-2 text-sm">${rule.action} / ${rule.basis}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${rule.value}</td>
+                        <td class="px-4 py-2 text-sm">${rule.priority}</td>
+                        <td class="px-4 py-2 text-sm">
+                            <button onclick="deleteRule(${rule.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading pricing rules:', error);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('addSupplierForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await addSupplier();
+            });
+            
+            document.getElementById('addRuleForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await addPricingRule();
+            });
+        }
+
+        // Add new supplier
+        async function addSupplier() {
+            try {
+                const { data, error } = await supabase
+                    .from('suppliers')
+                    .insert({
+                        name: document.getElementById('newSupplierName').value,
+                        currency: document.getElementById('newSupplierCurrency').value,
+                        incoterm: document.getElementById('newSupplierIncoterm').value
+                    });
+                
+                if (error) throw error;
+                
+                hideAddSupplierModal();
+                await loadSuppliers();
+                
+            } catch (error) {
+                console.error('Error adding supplier:', error);
+                alert('Failed to add supplier');
+            }
+        }
+
+        // Add pricing rule
+        async function addPricingRule() {
+            try {
+                const condition = JSON.parse(document.getElementById('ruleCondition').value || '{}');
+                
+                const { data, error } = await supabase
+                    .from('pricing_rules')
+                    .insert({
+                        supplier_id: document.getElementById('ruleSupplier').value || null,
+                        family: document.getElementById('ruleFamily').value || null,
+                        condition: condition,
+                        action: document.getElementById('ruleAction').value,
+                        basis: document.getElementById('ruleBasis').value,
+                        value: parseFloat(document.getElementById('ruleValue').value),
+                        notes: document.getElementById('ruleNotes').value
+                    });
+                
+                if (error) throw error;
+                
+                hideAddRuleModal();
+                await loadPricingRules();
+                
+            } catch (error) {
+                console.error('Error adding rule:', error);
+                alert('Failed to add pricing rule');
+            }
+        }
+
+        // Delete supplier
+        async function deleteSupplier(supplierId) {
+            if (!confirm('Are you sure you want to delete this supplier?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('suppliers')
+                    .delete()
+                    .eq('id', supplierId);
+                
+                if (error) throw error;
+                
+                await loadSuppliers();
+                
+            } catch (error) {
+                console.error('Error deleting supplier:', error);
+                alert('Failed to delete supplier');
+            }
+        }
+
+        // Delete pricing rule
+        async function deleteRule(ruleId) {
+            if (!confirm('Are you sure you want to delete this rule?')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('pricing_rules')
+                    .delete()
+                    .eq('id', ruleId);
+                
+                if (error) throw error;
+                
+                await loadPricingRules();
+                
+            } catch (error) {
+                console.error('Error deleting rule:', error);
+                alert('Failed to delete rule');
+            }
+        }
+
+        // Toggle rate card active status
+        async function toggleRateCard(cardId, activate) {
+            try {
+                const { error } = await supabase
+                    .from('supplier_rate_cards')
+                    .update({ active: activate })
+                    .eq('id', cardId);
+                
+                if (error) throw error;
+                
+                location.reload();
+                
+            } catch (error) {
+                console.error('Error toggling rate card:', error);
+                alert('Failed to update rate card');
+            }
+        }
+
+        // Modal functions
+        function showAddSupplierModal() {
+            document.getElementById('addSupplierModal').classList.remove('hidden');
+        }
+        
+        function hideAddSupplierModal() {
+            document.getElementById('addSupplierModal').classList.add('hidden');
+            document.getElementById('addSupplierForm').reset();
+        }
+        
+        function showAddRuleModal() {
+            document.getElementById('addRuleModal').classList.remove('hidden');
+        }
+        
+        function hideAddRuleModal() {
+            document.getElementById('addRuleModal').classList.add('hidden');
+            document.getElementById('addRuleForm').reset();
+        }
+    </script>
+</body>
+</html>

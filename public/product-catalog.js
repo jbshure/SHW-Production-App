@@ -794,6 +794,58 @@ function renderGridHTML(list) {
       const moqInfo = moq > 1 ? 
         `<div style="font-size: 11px; color: #666;">MOQ: ${moq}</div>` : '';
       
+      // Additional product details
+      const leadTime = product.lead_time ? 
+        `<div style="font-size: 11px; color: #ff6b35; font-weight: 600;">
+          📅 Lead: ${product.lead_time}
+        </div>` : '';
+      
+      const materialInfo = product.material ? 
+        `<div style="font-size: 11px; color: #666;" title="${safeAttr(product.material)}">
+          📦 ${product.material.substring(0, 30)}${product.material.length > 30 ? '...' : ''}
+        </div>` : '';
+      
+      const colorInfo = product.color ? 
+        `<div style="font-size: 11px; color: #666;">
+          🎨 Color: ${product.color}
+        </div>` : '';
+      
+      const printInfo = [];
+      if (product.print_options) {
+        printInfo.push(product.print_options);
+      }
+      if (product.print_process) {
+        printInfo.push(product.print_process);
+      }
+      const printDetails = printInfo.length > 0 ? 
+        `<div style="font-size: 11px; color: #666;">
+          🖨️ ${printInfo.join(' • ')}
+        </div>` : '';
+      
+      const finishInfo = product.finish ? 
+        `<div style="font-size: 11px; color: #666;">
+          ✨ ${product.finish}
+        </div>` : '';
+      
+      // Product description - prioritize different description fields
+      const description = product.shureprint_description || 
+                         product.e_commerce_product_description || 
+                         product.description || '';
+      const descriptionInfo = description ? 
+        `<div style="font-size: 11px; color: #555; margin: 4px 0; padding: 4px; background: #f9f9f9; border-radius: 3px; line-height: 1.3;" 
+              title="${safeAttr(description)}">
+          📝 ${description.substring(0, 100)}${description.length > 100 ? '...' : ''}
+        </div>` : '';
+      
+      // Templates - show if available with click functionality
+      const hasTemplates = product.templates && Array.isArray(product.templates) && product.templates.length > 0;
+      const templateInfo = hasTemplates ? 
+        `<div style="font-size: 11px; color: #2563eb; font-weight: 600; cursor: pointer;" 
+              onclick="event.stopPropagation(); viewTemplates('${safeAttr(product.id)}');" 
+              title="Click to view templates">
+          📄 ${product.templates.length} Template${product.templates.length > 1 ? 's' : ''} Available
+        </div>` : '';
+      
       // Create image container with fallback
       let imageElement = `
         <div class="product-image-container" style="position:relative;width:100%;height:200px;background:#f0f0f0;overflow:hidden;">
@@ -839,6 +891,13 @@ function renderGridHTML(list) {
             <div class="product-sku">SKU: ${safeText(sku)}</div>
             <div class="product-price">${safeText(price)}</div>
             <div class="product-category">${safeText(categoryName)}</div>
+            ${descriptionInfo}
+            ${leadTime}
+            ${templateInfo}
+            ${materialInfo}
+            ${colorInfo}
+            ${printDetails}
+            ${finishInfo}
             ${getProductOptionsHTML(product)}
             ${stockInfo}
             ${moqInfo}
@@ -887,6 +946,8 @@ function renderTableHTML(list) {
           <td>${safeText(getCategoryName(product))}</td>
           <td>${safeText((product.supplier && product.supplier.name) || "N/A")}</td>
           <td>${safeText(price)}</td>
+          <td>${safeText(product.lead_time || "N/A")}</td>
+          <td>${safeText(product.material || "N/A")}</td>
           <td>${stockStatus}</td>
           <td>${safeText(product.minimum_order_quantity || product.min_order_quantity || 1)}</td>
           <td><span class="price-tier">${safeText(product.status || "Active")}</span></td>
@@ -902,7 +963,7 @@ function renderTableHTML(list) {
       <thead>
         <tr>
           <th>Product Name</th><th>SKU</th><th>Category</th>
-          <th>Supplier</th><th>Price</th><th>Stock</th><th>MOQ</th><th>Status</th><th>Actions</th>
+          <th>Supplier</th><th>Price</th><th>Lead Time</th><th>Material</th><th>Stock</th><th>MOQ</th><th>Status</th><th>Actions</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -1182,6 +1243,78 @@ window.toggleVariantDetails = function(productId) {
       arrow.textContent = isHidden ? '▲' : '▼';
     }
   }
+};
+
+// View product templates
+window.viewTemplates = function(productId) {
+  const product = products.find(p => p.id === productId);
+  if (!product || !product.templates || product.templates.length === 0) {
+    alert('No templates available for this product');
+    return;
+  }
+  
+  // Create a simple modal to show templates
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  let templatesHTML = `
+    <h2 style="margin-bottom: 15px;">Templates for ${product.product_name || product.name}</h2>
+    <div style="display: grid; gap: 10px;">
+  `;
+  
+  product.templates.forEach((template, index) => {
+    const url = template.url || template;
+    const filename = template.filename || `Template ${index + 1}`;
+    templatesHTML += `
+      <div style="padding: 10px; background: #f5f5f5; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+        <span>📄 ${filename}</span>
+        <a href="${url}" target="_blank" 
+           style="background: #2563eb; color: white; padding: 5px 15px; border-radius: 4px; text-decoration: none; font-size: 12px;">
+          Download
+        </a>
+      </div>
+    `;
+  });
+  
+  templatesHTML += `
+    </div>
+    <button onclick="this.parentElement.parentElement.remove()" 
+            style="margin-top: 20px; padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      Close
+    </button>
+  `;
+  
+  content.innerHTML = templatesHTML;
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
 };
 
 // Helper functions for managing option types and values

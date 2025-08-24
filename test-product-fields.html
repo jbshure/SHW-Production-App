@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Fields Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      font-size: 12px;
+    }
+    th {
+      background: #f0f0f0;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .field-name {
+      font-weight: bold;
+      color: #2563eb;
+    }
+    .has-value {
+      background: #d4edda;
+    }
+    .no-value {
+      background: #f8d7da;
+      color: #999;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2563eb;
+    }
+    .field-list {
+      column-count: 3;
+      column-gap: 20px;
+      margin: 20px 0;
+    }
+    .field-item {
+      break-inside: avoid;
+      padding: 5px;
+      margin: 5px 0;
+      background: #f9f9f9;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Product Fields Analysis</h1>
+    <p>This page shows all available fields in your product data</p>
+    
+    <div id="loading">Loading products...</div>
+    <div id="stats" class="stats" style="display: none;"></div>
+    <div id="fieldList" class="field-list" style="display: none;"></div>
+    <div id="results" style="display: none;">
+      <h2>Sample Products (First 5)</h2>
+      <div style="overflow-x: auto;">
+        <table id="productTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="product-loader.js"></script>
+  
+  <script>
+    async function analyzeProducts() {
+      try {
+        // Load products using the same loader as product catalog
+        console.log('Loading products...');
+        const products = await window.loadProductsWithFullRelationships();
+        
+        if (!products || products.length === 0) {
+          document.getElementById('loading').innerHTML = '<p style="color: red;">No products found!</p>';
+          return;
+        }
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('stats').style.display = 'grid';
+        document.getElementById('fieldList').style.display = 'block';
+        document.getElementById('results').style.display = 'block';
+        
+        // Analyze fields
+        const fieldStats = {};
+        const allFields = new Set();
+        
+        // Collect all unique fields
+        products.forEach(product => {
+          Object.keys(product).forEach(key => {
+            allFields.add(key);
+            if (!fieldStats[key]) {
+              fieldStats[key] = {
+                count: 0,
+                hasValue: 0,
+                sampleValues: new Set(),
+                type: null
+              };
+            }
+            
+            fieldStats[key].count++;
+            const value = product[key];
+            
+            if (value !== null && value !== undefined && value !== '') {
+              fieldStats[key].hasValue++;
+              
+              // Track sample values (limit to 5)
+              if (fieldStats[key].sampleValues.size < 5) {
+                if (typeof value === 'object') {
+                  fieldStats[key].sampleValues.add(JSON.stringify(value).substring(0, 100));
+                  fieldStats[key].type = 'object';
+                } else {
+                  fieldStats[key].sampleValues.add(String(value).substring(0, 100));
+                  fieldStats[key].type = typeof value;
+                }
+              }
+            }
+          });
+        });
+        
+        // Display stats
+        const statsDiv = document.getElementById('stats');
+        statsDiv.innerHTML = `
+          <div class="stat-card">
+            <div class="stat-value">${products.length}</div>
+            <div>Total Products</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${allFields.size}</div>
+            <div>Unique Fields</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${Object.keys(fieldStats).filter(k => fieldStats[k].hasValue > 0).length}</div>
+            <div>Fields with Data</div>
+          </div>
+        `;
+        
+        // Display field list
+        const fieldListDiv = document.getElementById('fieldList');
+        fieldListDiv.innerHTML = '<h2>All Available Fields</h2>';
+        
+        const sortedFields = Array.from(allFields).sort();
+        sortedFields.forEach(field => {
+          const stat = fieldStats[field];
+          const percentage = Math.round((stat.hasValue / stat.count) * 100);
+          const samples = Array.from(stat.sampleValues).join(', ');
+          
+          const fieldItem = document.createElement('div');
+          fieldItem.className = 'field-item';
+          fieldItem.innerHTML = `
+            <strong class="field-name">${field}</strong> (${stat.type || 'unknown'})
+            <br>
+            <small>${percentage}% filled (${stat.hasValue}/${stat.count})</small>
+            ${samples ? `<br><small style="color: #666;">Sample: ${samples}</small>` : ''}
+          `;
+          fieldListDiv.appendChild(fieldItem);
+        });
+        
+        // Create table with first 5 products
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('tableBody');
+        
+        // Create header row
+        const headerRow = document.createElement('tr');
+        sortedFields.forEach(field => {
+          const th = document.createElement('th');
+          th.textContent = field;
+          headerRow.appendChild(th);
+        });
+        tableHead.appendChild(headerRow);
+        
+        // Add first 5 products
+        products.slice(0, 5).forEach(product => {
+          const row = document.createElement('tr');
+          sortedFields.forEach(field => {
+            const td = document.createElement('td');
+            const value = product[field];
+            
+            if (value === null || value === undefined || value === '') {
+              td.className = 'no-value';
+              td.textContent = '(empty)';
+            } else if (typeof value === 'object') {
+              td.className = 'has-value';
+              td.textContent = JSON.stringify(value).substring(0, 50);
+              td.title = JSON.stringify(value, null, 2);
+            } else {
+              td.className = 'has-value';
+              td.textContent = String(value).substring(0, 50);
+              td.title = String(value);
+            }
+            
+            row.appendChild(td);
+          });
+          tableBody.appendChild(row);
+        });
+        
+        // Log important fields for product cards
+        console.log('\n=== IMPORTANT FIELDS FOR PRODUCT CARDS ===');
+        const importantFields = [
+          'product_name', 'name', 'cp_sku', 'airtable_id', 
+          'price', 'base_price', 'category', 'supplier',
+          'minimum_order_quantity', 'min_order_quantity', 'moq',
+          'stock_quantity', 'track_inventory', 'status',
+          'description', 'short_description', 'lead_time',
+          'production_time', 'unit_of_measure', 'images'
+        ];
+        
+        importantFields.forEach(field => {
+          if (fieldStats[field]) {
+            const stat = fieldStats[field];
+            const percentage = Math.round((stat.hasValue / stat.count) * 100);
+            console.log(`${field}: ${percentage}% filled (${stat.hasValue}/${stat.count} products)`);
+          }
+        });
+        
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    }
+    
+    // Start analysis
+    window.addEventListener('load', () => {
+      setTimeout(analyzeProducts, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Images directory
 const IMAGES_DIR = path.join(__dirname, 'public', 'images', 'products');
-const BUCKET_NAME = 'project-images'; // Using your existing bucket
+const BUCKET_NAME = 'product-images'; // Correct bucket name
 
 async function uploadImagesToSupabase() {
   console.log('🚀 Starting Supabase Storage upload...');
@@ -71,10 +71,14 @@ async function uploadImagesToSupabase() {
       
       // Upload the file - use a path to avoid conflicts
       const storagePath = `products/${filename}`;
+      // Fix MIME type: .jpg should be image/jpeg not image/jpg
+      const ext = path.extname(filename).slice(1).toLowerCase();
+      const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+      
       const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(storagePath, fileBuffer, {
-          contentType: `image/${path.extname(filename).slice(1)}`,
+          contentType: mimeType,
           upsert: true,
           cacheControl: '3600'
         });
