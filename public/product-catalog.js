@@ -747,9 +747,10 @@ function renderGridHTML(list) {
       // Check local overrides first
       if (product.local_images && product.local_images.length > 0) {
         imageUrl = product.local_images[0];
-      } else if (window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName]) {
+      } else if ((window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING) && (window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING)[productName]) {
         // Apply override if not already set
-        product.local_images = window.LOCAL_IMAGE_MAPPING[productName];
+        const imageMapping = window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING;
+        product.local_images = imageMapping[productName];
         imageUrl = product.local_images[0];
       } else if (product.image_url) {
         imageUrl = product.image_url;
@@ -763,7 +764,7 @@ function renderGridHTML(list) {
           has_local_images: !!product.local_images,
           has_image_url: !!product.image_url,
           final_imageUrl: imageUrl,
-          in_mapping: !!(window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName])
+          in_mapping: !!((window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING) && (window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING)[productName])
         });
       }
       
@@ -3051,24 +3052,27 @@ function readableError(error) {
 function safeText(v){ if (v==null) return ""; return String(v); }
 function safeAttr(v){ if (v==null) return ""; return String(v).replaceAll('"',"&quot;").replaceAll("<","&lt;"); }
 
-// Apply local image overrides to all products
+// Apply image overrides to all products (works with both local and Supabase mappings)
 function applyLocalImageOverrides() {
-  if (!window.LOCAL_IMAGE_MAPPING || !products || products.length === 0) return 0;
+  // Check for either SUPABASE_IMAGE_MAPPING or LOCAL_IMAGE_MAPPING
+  const imageMapping = window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING;
+  if (!imageMapping || !products || products.length === 0) return 0;
   
   let count = 0;
   products.forEach(product => {
     const productName = product.product_name || product.name || '';
-    if (window.LOCAL_IMAGE_MAPPING[productName]) {
-      const localImages = window.LOCAL_IMAGE_MAPPING[productName];
-      if (localImages && localImages.length > 0) {
-        product.local_images = localImages;
-        product.image_url = localImages[0];
+    if (imageMapping[productName]) {
+      const images = imageMapping[productName];
+      if (images && images.length > 0) {
+        product.local_images = images;
+        product.image_url = images[0];
         count++;
       }
     }
   });
   
-  console.log(`✅ Applied local image overrides to ${count} products`);
+  const source = window.SUPABASE_IMAGE_MAPPING ? 'Supabase Storage' : 'local';
+  console.log(`✅ Applied ${source} image overrides to ${count} products`);
   return count;
 }
 
@@ -3076,13 +3080,15 @@ function applyLocalImageOverrides() {
 window.applyLocalImageOverrides = applyLocalImageOverrides;
 function safeFirstImage(product) {
   try {
-    // Check for local image override first
+    // Check for image override first (Supabase or local)
     const productName = product.product_name || product.name || '';
-    if (window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName]) {
-      const localImages = window.LOCAL_IMAGE_MAPPING[productName];
-      if (localImages && localImages.length > 0) {
-        console.log(`Using local image for ${productName}: ${localImages[0]}`);
-        return localImages[0];
+    const imageMapping = window.SUPABASE_IMAGE_MAPPING || window.LOCAL_IMAGE_MAPPING;
+    if (imageMapping && imageMapping[productName]) {
+      const images = imageMapping[productName];
+      if (images && images.length > 0) {
+        const source = window.SUPABASE_IMAGE_MAPPING ? 'Supabase' : 'local';
+        console.log(`Using ${source} image for ${productName}: ${images[0]}`);
+        return images[0];
       }
     }
     

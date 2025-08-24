@@ -1143,20 +1143,20 @@
   <!-- Supabase Configuration -->
   <script src="supabase-config.js"></script>
   
-  <!-- Local Image Override Mapping -->
-  <script src="local-image-override.js"></script>
+  <!-- Supabase Image Override Mapping -->
+  <script src="supabase-image-override.js"></script>
   
   <!-- Product Catalog JavaScript -->
   <script>
-    // Wait for both Supabase and local image mapping to load
+    // Wait for both Supabase and image mapping to load
     function loadProductCatalog() {
       const supabaseReady = typeof window.supabase !== 'undefined' && window.SUPABASE_CONFIG;
-      const mappingReady = window.LOCAL_IMAGE_MAPPING_READY === true;
+      const mappingReady = window.SUPABASE_IMAGE_MAPPING !== undefined;
       
       if (supabaseReady && mappingReady) {
         console.log('✅ Dependencies ready:');
         console.log('  - Supabase: Ready');
-        console.log('  - Local image mapping: Ready with', Object.keys(window.LOCAL_IMAGE_MAPPING).length, 'products');
+        console.log('  - Supabase image mapping: Ready with', Object.keys(window.SUPABASE_IMAGE_MAPPING).length, 'products from Supabase Storage');
         
         // Load product loader first
         console.log('Loading product-loader.js...');
@@ -1177,7 +1177,7 @@
         document.body.appendChild(loaderScript);
       } else {
         if (!supabaseReady) console.log('⏳ Waiting for Supabase...');
-        if (!mappingReady) console.log('⏳ Waiting for local image mapping...');
+        if (!mappingReady) console.log('⏳ Waiting for Supabase image mapping...');
         setTimeout(loadProductCatalog, 100);
       }
     }
