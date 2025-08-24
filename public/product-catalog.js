@@ -46,6 +46,8 @@ function initializeSupabase() {
 let products = [];
 let categories = [];
 let suppliers = [];
+let supplierRateCards = [];
+let pricingSuppliers = []; // Separate from existing suppliers variable
 let currentView = "grid";
 let filters = {
   search: "",
@@ -56,6 +58,7 @@ let filters = {
 let editingProduct = null;
 let competitorScraper = null;
 let priceComparisonChart = null;
+let selectedProductForPricing = null;
 
 // ===== Lifecycle =====
 async function initializeCatalog() {
@@ -454,6 +457,9 @@ async function loadProducts() {
     });
     
     console.log(`✅ Products array has ${products.length} items with relationships connected`);
+    // Apply local image overrides if available
+    applyLocalImageOverrides();
+    
     window.debugProducts = products; // Store globally for debugging
     
     if (products.length > 0) {
@@ -639,6 +645,9 @@ function renderProducts() {
     return;
   }
 
+  // Re-apply local image overrides before rendering
+  applyLocalImageOverrides();
+
   const filtered = filterProducts();
   console.log(`Render: products=${(products||[]).length}, filtered=${filtered.length}`);
   console.log("Current filters:", filters);
@@ -731,8 +740,32 @@ function renderGridHTML(list) {
   for (let i = 0; i < list.length; i++) {
     const product = list[i] || {};
     try {
-      // Use the normalized image_url from the product loader
-      const imageUrl = product.image_url || safeFirstImage(product);
+      // Priority: 1. local_images, 2. image_url, 3. safeFirstImage fallback
+      let imageUrl;
+      const productName = product.product_name || product.name || '';
+      
+      // Check local overrides first
+      if (product.local_images && product.local_images.length > 0) {
+        imageUrl = product.local_images[0];
+      } else if (window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName]) {
+        // Apply override if not already set
+        product.local_images = window.LOCAL_IMAGE_MAPPING[productName];
+        imageUrl = product.local_images[0];
+      } else if (product.image_url) {
+        imageUrl = product.image_url;
+      } else {
+        imageUrl = safeFirstImage(product);
+      }
+      
+      // Debug logging for first few products
+      if (i < 3) {
+        console.log(`Grid image for ${productName}:`, {
+          has_local_images: !!product.local_images,
+          has_image_url: !!product.image_url,
+          final_imageUrl: imageUrl,
+          in_mapping: !!(window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName])
+        });
+      }
       
       // Debug: Log first few products' structure
       if (i < 3) {
@@ -773,16 +806,23 @@ function renderGridHTML(list) {
             alt="${safeAttr(product.name || product.product_name || 'Product')}" 
             class="product-image"
             loading="lazy"
-            onerror="this.style.display='none';">
-          <div class="image-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;color:#999;z-index:-1;">
-            No Image Available
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.nextElementSibling.style.zIndex='1';">
+          <div class="image-placeholder" style="position:absolute;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;color:#999;background:#f5f5f5;border:2px dashed #ddd;z-index:-1;">
+            <div style="text-align:center;">
+              <div style="font-size:24px;margin-bottom:4px;">📦</div>
+              <div style="font-size:12px;">Image Not Available</div>
+            </div>
           </div>
         `;
       } else {
-        // No URL at all
+        // No URL at all - show a nice placeholder
         imageElement += `
-          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#999;">
-            No Image Available
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#999;background:#f8f9fa;border:2px dashed #e9ecef;">
+            <div style="text-align:center;">
+              <div style="font-size:32px;margin-bottom:8px;">📦</div>
+              <div style="font-size:14px;font-weight:500;">No Image</div>
+              <div style="font-size:12px;color:#adb5bd;">Click to add image</div>
+            </div>
           </div>
         `;
       }
@@ -809,6 +849,13 @@ function renderGridHTML(list) {
                          cursor: pointer; z-index: 10;" 
                   title="Compare Prices">
             📊 Compare
+          </button>
+          <button onclick="showSupplierPricing('${safeAttr(product.id)}')" 
+                  style="position: absolute; top: 10px; right: 100px; background: #10b981; border: none; 
+                         border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 700; 
+                         color: white; cursor: pointer; z-index: 10;" 
+                  title="View Supplier Pricing">
+            💰 Pricing
           </button>
         </div>
       `;
@@ -3003,16 +3050,50 @@ function readableError(error) {
 // ===== Safe text/attr helpers to prevent DOM breakage =====
 function safeText(v){ if (v==null) return ""; return String(v); }
 function safeAttr(v){ if (v==null) return ""; return String(v).replaceAll('"',"&quot;").replaceAll("<","&lt;"); }
+
+// Apply local image overrides to all products
+function applyLocalImageOverrides() {
+  if (!window.LOCAL_IMAGE_MAPPING || !products || products.length === 0) return 0;
+  
+  let count = 0;
+  products.forEach(product => {
+    const productName = product.product_name || product.name || '';
+    if (window.LOCAL_IMAGE_MAPPING[productName]) {
+      const localImages = window.LOCAL_IMAGE_MAPPING[productName];
+      if (localImages && localImages.length > 0) {
+        product.local_images = localImages;
+        product.image_url = localImages[0];
+        count++;
+      }
+    }
+  });
+  
+  console.log(`✅ Applied local image overrides to ${count} products`);
+  return count;
+}
+
+// Make it globally available for debugging
+window.applyLocalImageOverrides = applyLocalImageOverrides;
 function safeFirstImage(product) {
   try {
-    // Check for uploaded base64 image data first
+    // Check for local image override first
+    const productName = product.product_name || product.name || '';
+    if (window.LOCAL_IMAGE_MAPPING && window.LOCAL_IMAGE_MAPPING[productName]) {
+      const localImages = window.LOCAL_IMAGE_MAPPING[productName];
+      if (localImages && localImages.length > 0) {
+        console.log(`Using local image for ${productName}: ${localImages[0]}`);
+        return localImages[0];
+      }
+    }
+    
+    // Check for uploaded base64 image data
     if (product.image_data) {
       return product.image_data;
     }
     
+    // First pass: prioritize non-Airtable images
     // Check for Supabase/ShurePrint artboard image
     if (product.shureprint_artboard_image && typeof product.shureprint_artboard_image === 'string' && product.shureprint_artboard_image.trim()) {
-      // Skip if it's an Airtable URL
       if (!product.shureprint_artboard_image.includes('airtable')) {
         return product.shureprint_artboard_image;
       }
@@ -3020,7 +3101,6 @@ function safeFirstImage(product) {
     
     // Check for single image_url field (normalized in loadProducts)
     if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim()) {
-      // Skip if it's an Airtable URL
       if (!product.image_url.includes('airtable')) {
         return product.image_url;
       }
@@ -3028,7 +3108,6 @@ function safeFirstImage(product) {
     
     // Check for image field (singular)
     if (product.image && typeof product.image === 'string' && product.image.trim()) {
-      // Skip if it's an Airtable URL
       if (!product.image.includes('airtable')) {
         return product.image;
       }
@@ -3048,6 +3127,40 @@ function safeFirstImage(product) {
     }
     
     // Check variants for images
+    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      for (let variant of product.variants) {
+        if (variant.image_url && typeof variant.image_url === 'string' && variant.image_url.trim()) {
+          if (!variant.image_url.includes('airtable')) {
+            return variant.image_url;
+          }
+        }
+      }
+    }
+    
+    // Second pass: if no non-Airtable images found, allow Airtable images as fallback
+    if (product.shureprint_artboard_image && typeof product.shureprint_artboard_image === 'string' && product.shureprint_artboard_image.trim()) {
+      return product.shureprint_artboard_image;
+    }
+    
+    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim()) {
+      return product.image_url;
+    }
+    
+    if (product.image && typeof product.image === 'string' && product.image.trim()) {
+      return product.image;
+    }
+    
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      for (let img of product.images) {
+        if (typeof img === 'string' && img.trim()) {
+          return img;
+        }
+        if (img && img.url && typeof img.url === 'string' && img.url.trim()) {
+          return img.url;
+        }
+      }
+    }
+    
     if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
       for (let variant of product.variants) {
         if (variant.image_url && typeof variant.image_url === 'string' && variant.image_url.trim()) {
@@ -3214,11 +3327,7 @@ let columnMapping = {};
 let currentImportStep = 1;
 
 window.openImportModal = function() {
-  const modal = document.getElementById('importModal');
-  if (modal) {
-    modal.classList.add('show');
-    resetImportModal();
-  }
+  // Import functionality removed
 };
 
 window.closeImportModal = function() {
@@ -3597,6 +3706,183 @@ function initializeCompetitorScraper() {
 }
 
 // Open price comparison modal
+// ===== Supplier Pricing Functions =====
+window.loadSupplierRateCards = async function() {
+  try {
+    const { data: rateCards, error } = await supabase
+      .from('supplier_rate_cards')
+      .select(`
+        *,
+        suppliers (name, currency)
+      `)
+      .eq('active', true);
+    
+    if (error) throw error;
+    supplierRateCards = rateCards || [];
+    console.log('Loaded', supplierRateCards.length, 'active rate cards');
+    return supplierRateCards;
+  } catch (error) {
+    console.error('Error loading rate cards:', error);
+    return [];
+  }
+};
+
+window.calculateSupplierPricing = async function(productId, quantities = [100, 500, 1000, 5000, 10000]) {
+  try {
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+      console.error('Product not found:', productId);
+      return null;
+    }
+    
+    // Load rate cards if not already loaded
+    if (supplierRateCards.length === 0) {
+      await loadSupplierRateCards();
+    }
+    
+    // Find applicable rate cards for this product family
+    const applicableCards = supplierRateCards.filter(card => {
+      // Map product category to family (customize this mapping as needed)
+      const productFamily = product.category?.name?.toLowerCase() || 'other';
+      return card.family === productFamily;
+    });
+    
+    if (applicableCards.length === 0) {
+      console.log('No rate cards found for product family');
+      return null;
+    }
+    
+    // Calculate pricing for each supplier and quantity
+    const pricingMatrix = [];
+    
+    for (const card of applicableCards) {
+      for (const qty of quantities) {
+        try {
+          // Call Supabase RPC to compute price
+          const { data: price, error } = await supabase.rpc('compute_price', {
+            p_config_id: product.id, // Assuming product.id maps to product_config
+            p_supplier_id: card.supplier_id,
+            p_qty: qty
+          });
+          
+          if (!error && price) {
+            pricingMatrix.push({
+              supplier: card.suppliers?.name || 'Unknown',
+              quantity: qty,
+              landedCost: price.landed_unit_cost,
+              margin: price.target_margin,
+              sellPrice: price.sell_unit_price,
+              breakdown: price.breakdown
+            });
+          }
+        } catch (err) {
+          console.error('Error computing price:', err);
+        }
+      }
+    }
+    
+    return pricingMatrix;
+  } catch (error) {
+    console.error('Error calculating supplier pricing:', error);
+    return null;
+  }
+};
+
+window.showSupplierPricing = async function(productId) {
+  selectedProductForPricing = productId;
+  const product = products.find(p => p.id === productId);
+  
+  if (!product) return;
+  
+  // Show loading state
+  const modal = document.getElementById('supplierPricingModal');
+  if (!modal) {
+    createSupplierPricingModal();
+  }
+  
+  document.getElementById('supplierPricingModal').classList.remove('hidden');
+  document.getElementById('pricingProductName').textContent = product.name;
+  document.getElementById('pricingResults').innerHTML = '<p class="text-center">Loading pricing...</p>';
+  
+  // Calculate pricing
+  const pricingMatrix = await calculateSupplierPricing(productId);
+  
+  if (!pricingMatrix || pricingMatrix.length === 0) {
+    document.getElementById('pricingResults').innerHTML = 
+      '<p class="text-center text-gray-500">No supplier pricing available for this product</p>';
+    return;
+  }
+  
+  // Group by supplier
+  const bySupplier = {};
+  pricingMatrix.forEach(item => {
+    if (!bySupplier[item.supplier]) {
+      bySupplier[item.supplier] = [];
+    }
+    bySupplier[item.supplier].push(item);
+  });
+  
+  // Render pricing table
+  let html = '<div class="overflow-x-auto">';
+  
+  for (const [supplier, prices] of Object.entries(bySupplier)) {
+    html += `
+      <h4 class="font-semibold mb-2 mt-4">${supplier}</h4>
+      <table class="min-w-full divide-y divide-gray-200 mb-4">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Landed Cost</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Margin</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sell Price</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">`;
+    
+    prices.forEach(price => {
+      html += `
+        <tr>
+          <td class="px-4 py-2 whitespace-nowrap text-sm">${price.quantity.toLocaleString()}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-sm">$${price.landedCost.toFixed(2)}</td>
+          <td class="px-4 py-2 whitespace-nowrap text-sm">${(price.margin * 100).toFixed(0)}%</td>
+          <td class="px-4 py-2 whitespace-nowrap text-sm font-semibold">$${price.sellPrice.toFixed(2)}</td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+  }
+  
+  html += '</div>';
+  document.getElementById('pricingResults').innerHTML = html;
+};
+
+function createSupplierPricingModal() {
+  const modal = document.createElement('div');
+  modal.id = 'supplierPricingModal';
+  modal.className = 'hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Supplier Pricing: <span id="pricingProductName"></span></h3>
+        <button onclick="document.getElementById('supplierPricingModal').classList.add('hidden')" 
+                class="text-gray-500 hover:text-gray-700">✕</button>
+      </div>
+      <div id="pricingResults"></div>
+      <div class="mt-4 flex gap-2">
+        <button onclick="window.location.href='/supplier-pricing.html'" 
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          Manage Suppliers
+        </button>
+        <button onclick="document.getElementById('supplierPricingModal').classList.add('hidden')" 
+                class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+          Close
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 window.openPriceComparison = async function(productId) {
   console.log('Opening price comparison for product:', productId);
   
@@ -3923,4 +4209,318 @@ const originalInitialize = initializeCatalog;
 initializeCatalog = async function() {
   await originalInitialize();
   initializeCompetitorScraper();
+};
+
+// ===== Main View Management Functions =====
+window.switchMainView = function(viewName) {
+  // Hide all main views
+  document.querySelectorAll('.main-view').forEach(view => {
+    view.classList.remove('active');
+  });
+  
+  // Remove active class from all nav links
+  document.querySelectorAll('.admin-link').forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Show selected view
+  document.getElementById(viewName + '-view').classList.add('active');
+  event.target.classList.add('active');
+  
+  // Load data for the selected view
+  switch(viewName) {
+    case 'suppliers':
+      loadSuppliersView();
+      break;
+    case 'pricing-upload':
+      loadPricingUploadView();
+      break;
+    case 'products':
+      // Products are already loaded, just refresh if needed
+      break;
+  }
+};
+
+// Load suppliers view
+async function loadSuppliersView() {
+  try {
+    const { data: suppliers, error } = await supabase
+      .from('suppliers')
+      .select(`
+        *,
+        supplier_rate_cards (
+          family,
+          active
+        )
+      `)
+      .order('name');
+    
+    if (error) throw error;
+    
+    const tbody = document.getElementById('suppliers-table-body');
+    tbody.innerHTML = '';
+    
+    if (suppliers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">No suppliers found</td></tr>';
+      return;
+    }
+    
+    suppliers.forEach(supplier => {
+      const activeCards = supplier.supplier_rate_cards?.filter(rc => rc.active) || [];
+      const families = [...new Set(activeCards.map(rc => rc.family))];
+      
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><strong>${supplier.name}</strong></td>
+        <td>${supplier.currency}</td>
+        <td>${supplier.incoterm}</td>
+        <td><span class="rate-cards-badge">${families.join(', ') || 'None'}</span></td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="editSupplier('${supplier.id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteSupplier('${supplier.id}')">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Error loading suppliers:', error);
+    document.getElementById('suppliers-table-body').innerHTML = 
+      '<tr><td colspan="5" class="loading-cell">Error loading suppliers</td></tr>';
+  }
+}
+
+// Load pricing upload view
+async function loadPricingUploadView() {
+  try {
+    // Load suppliers for dropdown
+    const { data: suppliers, error: suppliersError } = await supabase
+      .from('suppliers')
+      .select('id, name')
+      .order('name');
+    
+    if (suppliersError) throw suppliersError;
+    
+    const select = document.getElementById('upload-supplier-select');
+    select.innerHTML = '<option value="">-- Select Supplier --</option>';
+    
+    suppliers.forEach(supplier => {
+      const option = document.createElement('option');
+      option.value = supplier.id;
+      option.textContent = supplier.name;
+      select.appendChild(option);
+    });
+    
+    // Load recent uploads
+    const { data: uploads, error: uploadsError } = await supabase
+      .from('supplier_uploads')
+      .select(`
+        *,
+        suppliers (name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    
+    if (uploadsError) throw uploadsError;
+    
+    const tbody = document.getElementById('uploads-table-body');
+    tbody.innerHTML = '';
+    
+    if (uploads.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">No uploads found</td></tr>';
+      return;
+    }
+    
+    uploads.forEach(upload => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${new Date(upload.created_at).toLocaleDateString()}</td>
+        <td>${upload.suppliers?.name || 'Unknown'}</td>
+        <td>${upload.file_name}</td>
+        <td><span class="status-badge status-${upload.status}">${upload.status}</span></td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="handleUploadAction('${upload.id}', '${upload.status}', '${upload.supplier_id}')">
+            ${getActionLabel(upload.status)}
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    console.error('Error loading pricing upload tab:', error);
+  }
+}
+
+function getActionLabel(status) {
+  switch(status) {
+    case 'parsed': return 'Map Headers';
+    case 'mapped': return 'Normalize';
+    case 'normalized': return 'Preview Matrix';
+    case 'matrix_ready': return 'Approve';
+    case 'approved': return 'View';
+    default: return 'Process';
+  }
+}
+
+// Handle pricing upload
+window.handlePricingUpload = async function() {
+  const supplierId = document.getElementById('upload-supplier-select').value;
+  const fileInput = document.getElementById('upload-file-input');
+  const file = fileInput.files[0];
+  
+  if (!supplierId || !file) {
+    showUploadStatus('Please select a supplier and file', 'error');
+    return;
+  }
+  
+  const uploadBtn = document.getElementById('upload-btn');
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Uploading...';
+  
+  try {
+    // Upload file to storage
+    const key = `${supplierId}/${Date.now()}-${file.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('supplier-quotes')
+      .upload(key, file, {
+        upsert: true,
+        contentType: file.type
+      });
+    
+    if (uploadError) throw uploadError;
+    
+    // Register upload in database
+    const { data: registerData, error: registerError } = await supabase.rpc('inbox_register_upload', {
+      p_supplier_id: supplierId,
+      p_file_path: `supplier-quotes/${key}`,
+      p_file_name: file.name,
+      p_mime: file.type
+    });
+    
+    if (registerError) throw registerError;
+    
+    // Process the file using Edge Function
+    const response = await fetch(`${window.SUPABASE_CONFIG.url}/functions/v1/process-upload?uploadId=${registerData}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${window.SUPABASE_CONFIG.anonKey}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Edge Function error: ${await response.text()}`);
+    }
+    
+    showUploadStatus('Upload successful! File processed and ready for mapping.', 'success');
+    
+    // Reset form
+    fileInput.value = '';
+    document.getElementById('upload-supplier-select').value = '';
+    
+    // Reload uploads table
+    await loadPricingUploadView();
+    
+  } catch (error) {
+    console.error('Upload error:', error);
+    showUploadStatus(`Upload failed: ${error.message}`, 'error');
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = 'Upload & Parse';
+  }
+};
+
+function showUploadStatus(message, type) {
+  const statusDiv = document.getElementById('upload-status');
+  statusDiv.className = `upload-status ${type}`;
+  statusDiv.innerHTML = message;
+  statusDiv.classList.remove('hidden');
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    statusDiv.classList.add('hidden');
+  }, 5000);
+}
+
+// Add supplier modal functions
+window.showAddSupplierModal = function() {
+  // Create modal if it doesn't exist
+  if (!document.getElementById('addSupplierModal')) {
+    createAddSupplierModal();
+  }
+  document.getElementById('addSupplierModal').style.display = 'flex';
+};
+
+function createAddSupplierModal() {
+  const modal = document.createElement('div');
+  modal.id = 'addSupplierModal';
+  modal.className = 'modal';
+  modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;';
+  modal.innerHTML = `
+    <div class="modal-content" style="background: white; border-radius: var(--radius); padding: 24px; width: 90%; max-width: 400px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Add New Supplier</h3>
+        <button onclick="closeAddSupplierModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Supplier Name</label>
+          <input type="text" id="newSupplierName" required style="width: 100%; padding: 10px; border: 1px solid var(--stroke); border-radius: var(--radius-sm);">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Currency</label>
+          <select id="newSupplierCurrency" style="width: 100%; padding: 10px; border: 1px solid var(--stroke); border-radius: var(--radius-sm);">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="CNY">CNY</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600;">Incoterm</label>
+          <select id="newSupplierIncoterm" style="width: 100%; padding: 10px; border: 1px solid var(--stroke); border-radius: var(--radius-sm);">
+            <option value="FOB">FOB</option>
+            <option value="EXW">EXW</option>
+            <option value="CIF">CIF</option>
+            <option value="DDP">DDP</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="addSupplier()">Add Supplier</button>
+        <button class="btn btn-secondary" onclick="closeAddSupplierModal()">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+window.addSupplier = async function() {
+  try {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .insert({
+        name: document.getElementById('newSupplierName').value,
+        currency: document.getElementById('newSupplierCurrency').value,
+        incoterm: document.getElementById('newSupplierIncoterm').value
+      });
+    
+    if (error) throw error;
+    
+    closeAddSupplierModal();
+    await loadSuppliersView();
+    
+  } catch (error) {
+    console.error('Error adding supplier:', error);
+    alert('Failed to add supplier: ' + error.message);
+  }
+};
+
+window.closeAddSupplierModal = function() {
+  const modal = document.getElementById('addSupplierModal');
+  if (modal) {
+    modal.style.display = 'none';
+    // Reset form
+    document.getElementById('newSupplierName').value = '';
+    document.getElementById('newSupplierCurrency').value = 'USD';
+    document.getElementById('newSupplierIncoterm').value = 'FOB';
+  }
 };

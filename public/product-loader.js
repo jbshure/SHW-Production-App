@@ -44,7 +44,7 @@ const FIELDS = {
 const TABLES = {
   products: "products",
   categories: "categories",
-  suppliers: "supplier",
+  suppliers: "suppliers",
   optionTypes: "option_types",
   optionValues: "option_values",
   currentVariants: "current_variant",

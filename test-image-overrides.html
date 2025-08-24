@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Image Overrides</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    .status { 
+      padding: 10px; 
+      margin: 10px 0; 
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .info { background: #d1ecf1; color: #0c5460; }
+    .warning { background: #fff3cd; color: #856404; }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .image-card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      text-align: center;
+    }
+    .image-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .product-name {
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .image-status {
+      font-size: 11px;
+      color: #666;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Override Test Page</h1>
+    
+    <div id="status"></div>
+    
+    <div style="margin: 20px 0;">
+      <button onclick="testMapping()">Test Local Mapping</button>
+      <button onclick="testImages()">Test Image Loading</button>
+      <button onclick="loadCatalog()">Load Product Catalog</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <h2>Image Preview</h2>
+    <div id="imageGrid" class="image-grid"></div>
+  </div>
+
+  <!-- Load the local image mapping -->
+  <script src="local-image-override.js"></script>
+  
+  <script>
+    function addStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.textContent = message;
+      statusDiv.appendChild(div);
+    }
+    
+    function testMapping() {
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+      
+      if (!window.LOCAL_IMAGE_MAPPING) {
+        addStatus('❌ LOCAL_IMAGE_MAPPING not found!', 'error');
+        return;
+      }
+      
+      addStatus(`✅ LOCAL_IMAGE_MAPPING loaded with ${Object.keys(window.LOCAL_IMAGE_MAPPING).length} products`, 'success');
+      
+      // Show first 5 products
+      const products = Object.keys(window.LOCAL_IMAGE_MAPPING).slice(0, 5);
+      let html = '<h3>Sample Mappings:</h3><ul>';
+      products.forEach(name => {
+        const images = window.LOCAL_IMAGE_MAPPING[name];
+        html += `<li><strong>${name}:</strong> ${images.length} image(s)`;
+        html += '<ul>';
+        images.forEach(url => {
+          html += `<li>${url}</li>`;
+        });
+        html += '</ul></li>';
+      });
+      html += '</ul>';
+      results.innerHTML = html;
+    }
+    
+    async function testImages() {
+      const grid = document.getElementById('imageGrid');
+      grid.innerHTML = '';
+      
+      if (!window.LOCAL_IMAGE_MAPPING) {
+        addStatus('❌ LOCAL_IMAGE_MAPPING not found!', 'error');
+        return;
+      }
+      
+      addStatus('Testing image loading...', 'info');
+      
+      // Test first 12 products
+      const products = Object.keys(window.LOCAL_IMAGE_MAPPING).slice(0, 12);
+      
+      for (const productName of products) {
+        const images = window.LOCAL_IMAGE_MAPPING[productName];
+        const imageUrl = images[0];
+        
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.onerror = function() {
+          this.style.background = '#ffcccc';
+          this.alt = '❌ Failed to load';
+          const status = card.querySelector('.image-status');
+          if (status) {
+            status.textContent = '❌ Failed';
+            status.style.color = 'red';
+          }
+          addStatus(`❌ Failed to load: ${imageUrl}`, 'error');
+        };
+        img.onload = function() {
+          const status = card.querySelector('.image-status');
+          if (status) {
+            status.textContent = '✅ Loaded';
+            status.style.color = 'green';
+          }
+        };
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'product-name';
+        nameDiv.textContent = productName;
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'image-status';
+        statusDiv.textContent = '⏳ Loading...';
+        
+        card.appendChild(img);
+        card.appendChild(nameDiv);
+        card.appendChild(statusDiv);
+        
+        grid.appendChild(card);
+        
+        // Test with fetch
+        try {
+          const response = await fetch(imageUrl, { method: 'HEAD' });
+          if (response.ok) {
+            console.log(`✅ ${productName}: ${imageUrl} - HTTP ${response.status}`);
+          } else {
+            console.error(`❌ ${productName}: ${imageUrl} - HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.error(`❌ ${productName}: ${imageUrl} - ${error.message}`);
+        }
+      }
+      
+      addStatus(`Testing ${products.length} product images...`, 'info');
+    }
+    
+    function loadCatalog() {
+      window.location.href = '/product-catalog.html';
+    }
+    
+    // Auto-run tests on load
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        testMapping();
+        testImages();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

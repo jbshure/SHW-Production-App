@@ -122,12 +122,193 @@
     }
     
     /* Products grid */
-    .products-panel {
+    .content-panel {
       background: #fff;
       border: 1px solid var(--stroke);
       border-radius: var(--radius);
       padding: 20px;
       box-shadow: var(--shadow);
+    }
+
+    /* Main Views */
+    .main-view {
+      display: none;
+    }
+    .main-view.active {
+      display: block;
+    }
+    
+    /* View Headers */
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .view-header h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    /* Active navigation link */
+    .admin-link.active {
+      color: var(--ink);
+      background: var(--neon);
+      font-weight: 700;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--stroke);
+      background: var(--soft);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 8px 8px 0 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .tab-btn:hover {
+      color: var(--ink);
+      background: var(--soft);
+    }
+    .tab-btn.active {
+      color: var(--ink);
+      background: var(--cream);
+      border: 1px solid var(--stroke);
+      border-bottom: 2px solid var(--cream);
+      margin-bottom: -2px;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .tab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .tab-header h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    /* Data Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    .data-table th,
+    .data-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .data-table th {
+      background: var(--soft);
+      font-weight: 600;
+      color: var(--ink);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .data-table tbody tr:hover {
+      background: var(--soft);
+    }
+    .loading-cell {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 16px;
+    }
+
+    /* Upload Form */
+    .upload-section {
+      margin-bottom: 32px;
+    }
+    .upload-form {
+      background: var(--soft);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .form-group select,
+    .form-group input[type="file"] {
+      padding: 10px 12px;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      font-size: 14px;
+    }
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(227, 255, 51, 0.1);
+    }
+    
+    .upload-status {
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+    .upload-status.success {
+      background: rgba(40, 167, 69, 0.1);
+      border: 1px solid rgba(40, 167, 69, 0.3);
+      color: var(--success);
+    }
+    .upload-status.error {
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      color: var(--error);
+    }
+
+    .uploads-section h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 16px;
     }
     
     /* Search and controls */
@@ -429,8 +610,11 @@
         <h1>Product Catalog</h1>
       </div>
       <div class="admin-nav">
+        <a href="javascript:void(0)" class="admin-link active" onclick="switchMainView('products')">Products</a>
+        <a href="javascript:void(0)" class="admin-link" onclick="switchMainView('suppliers')">Suppliers</a>
+        <a href="javascript:void(0)" class="admin-link" onclick="switchMainView('pricing-upload')">Pricing Upload</a>
+        <span style="border-left: 1px solid var(--stroke); height: 20px; margin: 0 8px;"></span>
         <button class="btn btn-secondary" onclick="refreshProducts()">🔄 Refresh</button>
-        <button class="btn btn-secondary" onclick="openImportModal()">Import Excel</button>
         <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
       </div>
     </header>
@@ -492,22 +676,106 @@
         <button class="btn btn-secondary" style="width: 100%;" onclick="clearFilters()">Clear Filters</button>
       </div>
 
-      <!-- Products Panel -->
-      <div class="products-panel">
-        <div class="products-header">
-          <div class="search-box">
-            <span class="search-icon">⌕</span>
-            <input type="text" class="search-input" id="search-input" placeholder="Search products, SKUs, descriptions...">
+      <!-- Main Content Area -->
+      <div class="content-panel">
+        <!-- Products View -->
+        <div id="products-view" class="main-view active">
+          <div class="products-header">
+            <div class="search-box">
+              <span class="search-icon">⌕</span>
+              <input type="text" class="search-input" id="search-input" placeholder="Search products, SKUs, descriptions...">
+            </div>
+            <div class="view-toggle">
+              <button class="view-btn active" onclick="setView('grid')">Grid</button>
+              <button class="view-btn" onclick="setView('table')">Table</button>
+            </div>
           </div>
-          <div class="view-toggle">
-            <button class="view-btn active" onclick="setView('grid')">Grid</button>
-            <button class="view-btn" onclick="setView('table')">Table</button>
+          
+          <!-- Products Container -->
+          <div id="products-container">
+            <div class="loading">Loading products...</div>
           </div>
         </div>
-        
-        <!-- Products Container -->
-        <div id="products-container">
-          <div class="loading">Loading products...</div>
+
+        <!-- Suppliers View -->
+        <div id="suppliers-view" class="main-view">
+          <div class="view-header">
+            <h3>Supplier Management</h3>
+            <button class="btn btn-primary" onclick="showAddSupplierModal()">
+              + Add Supplier
+            </button>
+          </div>
+          
+          <div class="suppliers-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Currency</th>
+                  <th>Incoterm</th>
+                  <th>Rate Cards</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="suppliers-table-body">
+                <tr><td colspan="5" class="loading-cell">Loading suppliers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pricing Upload View -->
+        <div id="pricing-upload-view" class="main-view">
+          <div class="view-header">
+            <h3>Upload Supplier Pricing</h3>
+          </div>
+          
+          <div class="upload-section">
+            <div class="upload-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Select Supplier</label>
+                  <select id="upload-supplier-select">
+                    <option value="">-- Select Supplier --</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Upload File (CSV/XLSX/PDF)</label>
+                  <input type="file" id="upload-file-input" accept=".csv,.xlsx,.pdf">
+                </div>
+              </div>
+              
+              <button class="btn btn-primary" onclick="handlePricingUpload()" id="upload-btn">
+                Upload & Parse
+              </button>
+            </div>
+            
+            <div id="upload-status" class="upload-status hidden">
+              <!-- Upload status will be shown here -->
+            </div>
+          </div>
+
+          <!-- Recent Uploads -->
+          <div class="uploads-section">
+            <h4>Recent Uploads</h4>
+            <div class="uploads-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>File</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="uploads-table-body">
+                  <tr><td colspan="5" class="loading-cell">Loading uploads...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -774,82 +1042,6 @@
     </div>
   </div>
 
-  <!-- Excel Import Modal -->
-  <div id="importModal" class="modal">
-    <div class="modal-content" style="max-width: 95%; width: 1200px;">
-      <div class="modal-header">
-        <h2 class="modal-title">Import Products from Excel</h2>
-        <button class="modal-close" onclick="closeImportModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div id="importStep1" style="display: block;">
-          <div style="text-align: center; padding: 40px; border: 2px dashed var(--stroke); border-radius: 12px; background: var(--soft);">
-            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)" style="display: none;">
-            <h3 style="margin-bottom: 15px;">Upload Excel or CSV File</h3>
-            <p style="color: #666; margin-bottom: 20px;">Select a file containing product data to import</p>
-            <button class="btn btn-primary" onclick="document.getElementById('excelFile').click()">
-              Choose File
-            </button>
-            <div id="uploadedFileName" style="margin-top: 15px; font-weight: 600; color: #28a745;"></div>
-          </div>
-          
-          <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-            <h4 style="margin-bottom: 15px;">Expected Excel Format:</h4>
-            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Your Excel file should have column headers in the first row. Common columns include:</p>
-            <ul style="font-size: 13px; color: #666; list-style: none; padding: 0;">
-              <li>• Product Name (required)</li>
-              <li>• SKU</li>
-              <li>• Description</li>
-              <li>• Category</li>
-              <li>• Price / Base Price</li>
-              <li>• Setup Fee</li>
-              <li>• Min Quantity / MOQ</li>
-              <li>• Stock Quantity</li>
-              <li>• Image URL</li>
-              <li>• Status (Active/Draft/Archived)</li>
-            </ul>
-            <button class="btn btn-secondary" onclick="downloadTemplate()" style="margin-top: 15px;">
-              Download Template
-            </button>
-          </div>
-        </div>
-        
-        <div id="importStep2" style="display: none;">
-          <h3 style="margin-bottom: 20px;">Map Excel Columns to Product Fields</h3>
-          <div id="columnMappingContainer" style="max-height: 400px; overflow-y: auto;">
-            <!-- Column mapping will be generated here -->
-          </div>
-          
-          <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
-            <strong>Preview:</strong> <span id="previewCount">0</span> products will be imported
-          </div>
-        </div>
-        
-        <div id="importStep3" style="display: none;">
-          <h3 style="margin-bottom: 20px;">Import Progress</h3>
-          <div id="importProgress" style="padding: 20px;">
-            <div style="width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden;">
-              <div id="progressBar" style="width: 0%; height: 100%; background: var(--neon); transition: width 0.3s;"></div>
-            </div>
-            <p id="progressText" style="margin-top: 10px; text-align: center;">Importing...</p>
-          </div>
-          
-          <div id="importResults" style="display: none; margin-top: 20px;">
-            <h4>Import Complete!</h4>
-            <p><span id="successCount">0</span> products imported successfully</p>
-            <p><span id="errorCount">0</span> errors occurred</p>
-            <div id="errorDetails" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
-        <button id="importBackBtn" class="btn btn-secondary" onclick="importBack()" style="display: none;">Back</button>
-        <button id="importNextBtn" class="btn btn-primary" onclick="importNext()" style="display: none;">Next</button>
-        <button id="importBtn" class="btn btn-primary" onclick="startImport()" style="display: none;">Import Products</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Competitor Price Comparison Modal -->
   <div id="priceComparisonModal" class="modal">
@@ -951,11 +1143,21 @@
   <!-- Supabase Configuration -->
   <script src="supabase-config.js"></script>
   
+  <!-- Local Image Override Mapping -->
+  <script src="local-image-override.js"></script>
+  
   <!-- Product Catalog JavaScript -->
   <script>
-    // Wait for Supabase to load before loading product catalog
+    // Wait for both Supabase and local image mapping to load
     function loadProductCatalog() {
-      if (typeof window.supabase !== 'undefined' && window.SUPABASE_CONFIG) {
+      const supabaseReady = typeof window.supabase !== 'undefined' && window.SUPABASE_CONFIG;
+      const mappingReady = window.LOCAL_IMAGE_MAPPING_READY === true;
+      
+      if (supabaseReady && mappingReady) {
+        console.log('✅ Dependencies ready:');
+        console.log('  - Supabase: Ready');
+        console.log('  - Local image mapping: Ready with', Object.keys(window.LOCAL_IMAGE_MAPPING).length, 'products');
+        
         // Load product loader first
         console.log('Loading product-loader.js...');
         const loaderScript = document.createElement('script');
@@ -974,16 +1176,149 @@
         };
         document.body.appendChild(loaderScript);
       } else {
-        console.log('Waiting for dependencies...');
+        if (!supabaseReady) console.log('⏳ Waiting for Supabase...');
+        if (!mappingReady) console.log('⏳ Waiting for local image mapping...');
         setTimeout(loadProductCatalog, 100);
       }
     }
     
-    // Start loading after a short delay
-    window.addEventListener('load', function() {
-      loadProductCatalog();
-    });
+    // Start loading immediately
+    loadProductCatalog();
   </script>
   <script src="/shared-navigation.js"></script>
+  
+  <script>
+    // Add diagnostic function to global scope
+    window.runDiagnostics = async function() {
+      console.log('=== PRODUCT CATALOG DIAGNOSTICS ===');
+      
+      // Check if supabase is initialized
+      console.log('1. Supabase client:', !!window.supabase);
+      console.log('2. SUPABASE_CONFIG:', window.SUPABASE_CONFIG);
+      
+      // Check current products
+      console.log('3. Current products array:', products?.length || 'undefined');
+      if (products && products[0]) {
+        const sample = products[0];
+        console.log('4. Sample product keys:', Object.keys(sample));
+        console.log('5. Sample product image fields:', {
+          image: sample.image,
+          image_url: sample.image_url,
+          images: sample.images,
+          image_data: sample.image_data,
+          shureprint_artboard_image: sample.shureprint_artboard_image
+        });
+      }
+      
+      // Check image URLs in products
+      if (products && products.length > 0) {
+        const productsWithImages = products.filter(p => p.image_url || p.image || p.images);
+        const airtableImages = productsWithImages.filter(p => 
+          (p.image_url && p.image_url.includes('airtable')) || 
+          (p.image && p.image.includes('airtable'))
+        );
+        
+        console.log('5a. Products with some image field:', productsWithImages.length);
+        console.log('5b. Products with Airtable images:', airtableImages.length);
+        
+        if (productsWithImages.length > 0) {
+          const sample = productsWithImages[0];
+          console.log('5c. Sample product with images:', {
+            id: sample.id,
+            name: sample.name,
+            image_url: sample.image_url,
+            image: sample.image,
+            images: sample.images,
+            image_data: sample.image_data,
+            isAirtableImage: sample.image_url?.includes('airtable') || sample.image?.includes('airtable')
+          });
+          
+          // Test if the sample image URL is accessible
+          if (sample.image_url) {
+            console.log('5d. Testing sample image URL accessibility...');
+            fetch(sample.image_url, { method: 'HEAD' })
+              .then(response => {
+                console.log('5e. Image URL test result:', {
+                  url: sample.image_url,
+                  status: response.status,
+                  statusText: response.statusText,
+                  accessible: response.ok
+                });
+              })
+              .catch(error => {
+                console.log('5e. Image URL test failed:', {
+                  url: sample.image_url,
+                  error: error.message
+                });
+              });
+          }
+        }
+      }
+      
+      // Check if robust loader is available
+      console.log('5. Robust loader available:', !!window.loadProductsWithFullRelationships);
+      
+      // Test direct Supabase query
+      if (!supabase) {
+        console.log('6. Cannot test - supabase not initialized');
+        return;
+      }
+      
+      try {
+        console.log('6. Testing direct product query...');
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .limit(3);
+          
+        if (error) {
+          console.log('6. Products query error:', error);
+        } else {
+          console.log('6. Direct products query success:', data?.length, 'products');
+          console.log('   Sample:', data?.[0]);
+        }
+        
+        // Test suppliers table
+        console.log('7. Testing suppliers table...');
+        const { data: suppliersData, error: suppliersError } = await supabase
+          .from('suppliers')
+          .select('*')
+          .limit(3);
+          
+        if (suppliersError) {
+          console.log('7. Suppliers query error:', suppliersError);
+        } else {
+          console.log('7. Suppliers query success:', suppliersData?.length, 'suppliers');
+        }
+        
+        // Test legacy supplier table
+        console.log('8. Testing legacy supplier table...');
+        const { data: legacySupplier, error: legacyError } = await supabase
+          .from('supplier')
+          .select('*')
+          .limit(3);
+          
+        if (legacyError) {
+          console.log('8. Legacy supplier query error:', legacyError);
+        } else {
+          console.log('8. Legacy supplier query success:', legacySupplier?.length, 'suppliers');
+        }
+        
+      } catch (err) {
+        console.log('6-8. Query test failed:', err);
+      }
+      
+      console.log('=== END DIAGNOSTICS ===');
+      console.log('Copy this output and share it for debugging!');
+    };
+    
+    // Auto-run diagnostics after page loads
+    setTimeout(() => {
+      if (window.runDiagnostics) {
+        console.log('Running automatic diagnostics...');
+        window.runDiagnostics();
+      }
+    }, 3000);
+  </script>
 </body>
 </html>
